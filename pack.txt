@@ -1,0 +1,11 @@
+Submit your program correctly.
+
+    Your submission should be a single tgz file. Your tgz file should only contain the submission files (arraysum.c, arraysum.h, Makefile) and no directories.
+        You can achieve this with the following command:
+        tar -cvzf <yourfilename>.tgz arraysum.c arraysum.h Makefile
+        You can name your tgz file what you wish within reason (Canvas renames them to your user id).
+    When I run "tar -xzvf yourfile.tgz" on your tgz file, it should extract the files directly in the directory your tgz file is in. I should be able to run the following three commands in sequence and have them work correctly:
+        tar -xzvf yourfile.tgz
+        make
+        ./arraysum
+
