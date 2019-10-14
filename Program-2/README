@@ -1,0 +1,136 @@
+Programming Assignment 2
+Tar Archiver
+Summary
+
+In this project, we will develop two programs. A program to tar a given list of files and create an archive file, and another program that can untar a given archive file. The program that tars the files should be called ctar (short for create tar) and the program that extracts the archive should be called utar (short for untar). These programs will help you develop skills in the following topics:
+
+    Use arguments in a C program
+    Build abstractions to operate on files using system calls in a C program
+    Use system calls for file I/O
+
+The Program
+
+The usage information of ctar and utar is given below.
+
+To create an empty archive file:
+
+ctar -a <archive-file-name>
+
+To append files to a given archive (create if archive not present) :
+
+ctar -a <archive-file-name> file1 file2 ... filen
+
+To delete a file from the archive :
+
+ctar -d <archive-file-name> <file-to-be-deleted>
+
+To extract contents of the archive file :
+
+utar <archive-file-name>
+
+Program Details
+
+In order to simplify your implementation, assume that each of the file parameters should be the name of a file, not a directory, and wild-cards will NOT be allowed.
+Ctar Details
+
+The archive file should begin with a header which contains pointers to where each file starts, the size of the file, and another pointer to its name. The header will provide enough space to store information about 4 files and an overflow link next. The link, when not zero is a pointer to another header of identical structure. The C structure describing the header is shown below:
+
+typedef struct
+{
+  int  magic;             /* This must have the value  0x63746172.                        */
+  int  eop;               /* End of file pointer.                                         */
+  int  block_count;       /* Number of entries in the block which are in-use.             */
+  int  file_size[4];      /* File size in bytes for files 1..4                            */
+  char deleted[4];        /* Contains binary one at position i if i-th entry was deleted. */
+  int  file_name[4];      /* pointer to the name of the file.                             */
+  int  next;              /* pointer to the next header block.                            */
+} hdr;
+
+There is no maximum file name length or file size.
+
+To obtain information about the file, the archive program ctar should stat the input file name and fill out the header data above (See manual page for function fstat()). Once the header is created, it can be written to the archive file. When writing the header to the file, do not assume a fixed size for the header, use sizeof() to determine how many bytes to write to file. After the header has been written to file, up to four files can be written to the file. If there are more than 4 files to be archived, create a new header at the end of the file. The process will be repeated for the entire list of files to be archived.
+
+If the archive file already exists, you must first verify that it is a real archive file by ensuring the initial header contains the magic number in the magic variable, and the size of the archive file in eop. Then, you must first determine the next header that has available space, scroll to that header, and add the file information to that header.
+
+If a delete command is given, your program should find the header for the required file by comparing the file name given as the argument, read the header in, change the appropriate deleted flag to 1 and write the header back to the file. You don't actually have to delete the file from the archive, only to set the flag.
+
+    Your overall archive file structure should look like so:
+        Header 1
+        File 1 Name (null terminated)
+        File 1 Data
+        File 2 Name (null terminated)
+        File 2 Data
+        File 3 Name (null terminated)
+        File 3 Data
+        File 4 Name (null terminated)
+        File 4 Data
+        Header 2
+        File 5 Name (null terminated)
+        File 5 Data
+        ...
+
+Utar Details
+
+The utar program should confirm that the given file is an archive file by checking that the first header contains the appropriate information (contains the magic number in the magic variable, and the size of the archive file in eop), and if it is, it should extract the files in it one by one. If a file with the same name exists in the current directory, utar should inform the user and terminate:
+
+File xyz already exists. Remove the file and restart.
+
+The program should also not output a file if the deleted flag is 1. All untarred files should have (0644) permissions regardless of their original permissions.
+Compiling Files
+
+You should be using a Makefile to compile your programs. Please make use of your experience with the practice submission as well as Project 1 to create one.
+Restrictions
+
+    You may NOT use any stdio functions (no printf, scanf, etc.) in your final submission EXCEPT sprintf and sscanf
+        This means if you open the manpage of a function and it asks you to include stdio.h, you can't use it!
+    You can't use any existing programs on the system to accomplish this.
+    Your program must be written by you in C.
+    If you use a version control system, you MUST use a private repository until the class is concluded. You may not share your solutions with anyone even passively through a version control system (such as github) while the class is ongoing.
+    If you have any doubts about what functions you can use, please e-mail me!
+
+Error Checking
+
+Your program should check for all possible errors and gracefully fail (i.e. not crash) when an unexpected error occurs. In addition, your program should implement "all or nothing" semantics, i.e., you should verify all input arguments for validity and unless all are valid, you should not create a new archive or modify an existing archive. Here are some sample errors you should definitely check for:
+
+    Non-existent input file argument
+    The archive file exists but is not a real archive file
+    Incorrect number of arguments or incorrect type (i.e. first argument to ctar is something other than -a or -d).
+    Return values from all kernel calls
+    No memory leaks
+
+Note that this list is not exhaustive. Your program should not crash unexpectedly (quitting because of a user interruption or a signal is fine). You do not need to protect against file corruption if you encounter an unanticipated I/O error. You may also assume if calls to open() and read() are not returning errors, you can proceed.
+
+For memory leaks: Program defensively. Do not allocate anything that you don't need, and free memory locations immediately after you're done using them. Don't leave it for later - that's what causes memory leaks. You can use the tool valgrind to check for memory leaks. Run your program like so:
+
+valgrind ./ctar ....
+
+This will tell you if your program has any memory leaks or incorrect accesses. Your program should report 0. Suppressed errors are fine.
+Hints
+
+    Make use of the sprintf() function - with write() and strlen(), it'll be easy to print messages to the terminal.
+    Remember that you can write the entire header struct to file by passing it to write() along with its size, you don't have to worry about writing it element by element.
+    DO NOT TEST YOUR PROGRAM WITH YOUR CODE FILES! IF YOU ACCIDENTALLY OVERWRITE OR DELETE THEM BY ACCIDENT YOU WILL HAVE TO START FROM SCRATCH! MAKE REGULAR BACKUPS!
+    Implement the programs step-by-step. Here is a sample list of steps you can take:
+        Implement ctar so that it creates an empty archive with only the header in it.
+        Implement ctar so it creates an archive with a single file in it.
+            First test with a non-existent archive -- create an empty archive, populate and write the header appropriately, followed by the file name and file.
+            Next, test with an empty archive. Read in the struct, edit it appropriately, then write it back, followed by the file name and file.
+        Implement utar such that it can extract this single file.
+        Implement ctarring multiple files. Check to see if the archive size is correct. If you ctar two files with sizes 12 bytes and 16 bytes, your archive file should have a size of sizeof(hdr) + 12 + 16 + <filename1> + <filename2>.
+        Implement utar such that it can extract these multiple files.
+        Implement appending files to an existing archive. You can reuse the code from utar that checks whether a file is a valid archive in here (you may want to move that code to a common header to avoid duplicating it). Test that utar still works with the appended archives.
+        Implement deleting files from an existing archive. Test that utar skips these deleted files.
+        Implement final error checking code to ensure everything works correctly (i.e. utar warns the user about overwriting files).
+    Don't get lost in error checking code, the majority of your score will come from the implementation.
+        Do the error checking for the system calls as you write them.
+        Assume you have correct inputs while testing your programs. You can check for general file i/o errors etc. once you're finished with the program.
+
+Submission Requirements
+
+I will expect a tgz file with the following contents:
+
+    A copy of the source files with comments (you don't have to explain every single line but you should explain what each block of code does)
+    A Makefile with rules all, ctar, utar and clean
+    A directory named TESTS in the main project directory containing any files you tested your program with
+
+When I execute the commands: "tar -xzvf yourfile.tgz; make" against your submission, a executables named ctar and utar should be created in the current directory. The tar file can be created by executing the command "tar -cvzf <yourfilename>.tgz *" from the directory containing your Makefile and final program code. Make sure your submission unpacks and compiles correctly before you submit.
