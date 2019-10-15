@@ -1,6 +1,8 @@
 ### Might need customized
 # Final executable/program name
-EXECUTABLE_NAME ?= ctar
+EXECUTABLE_NAME_CTAR ?= ctar
+EXECUTABLE_NAME_UTAR ?= utar
+
 # Compiler
 CC ?= gcc
 # C/CPP standard flag
@@ -10,8 +12,6 @@ PROJECT_CC_FLAGS ?= -pedantic -Wall
 # Where source code is located (Probably don't change me)
 SOURCE_DIRS ?= .
 
-EXECUTABLE_NAME_CTAR ?= ctar
-EXECUTABLE_NAME_UTAR ?= utar
 ### Don't touch me
 # Arg aggregations
 PARGS ?=
@@ -19,6 +19,10 @@ CC_FLAGS ?= $(INC_FLAGS) $(C_STANDARD) $(PROJECT_CC_FLAGS)
 SOURCE_FILES := $(shell find $(SOURCE_DIRS) -name '*.cpp' -or -name '*.c' -or -name '*.s')
 BUILD_OBJECTS := $(addsuffix .o,$(basename $(SOURCE_FILES)))
 BUILD_DEPENDENCIES := $(BUILD_OBJECTS:.o=.d)
+
+# To prevent conflicting "main" methods
+CTAR_BUILD_OBJECTS := $(filter-out ./$(EXECUTABLE_NAME_UTAR).o,$(BUILD_OBJECTS))
+UTAR_BUILD_OBJECTS := $(filter-out ./$(EXECUTABLE_NAME_CTAR).o,$(BUILD_OBJECTS))
 
 INC_DIRS := $(shell find $(SOURCE_DIRS) -type d)
 INC_FLAGS := $(addprefix -I,$(INC_DIRS))
@@ -29,13 +33,13 @@ all: $(EXECUTABLE_NAME_CTAR) $(EXECUTABLE_NAME_UTAR)
 
 # Standard build
 .PHONY: $(EXECUTABLE_NAME_CTAR)
-$(EXECUTABLE_NAME_CTAR): ctar.c
-	$(CC) $(LDFLAGS) $(BUILD_OBJECTS) $(LOADLIBES) $(LDLIBS) -o $(EXECUTABLE_NAME_CTAR)
+$(EXECUTABLE_NAME_CTAR): $(CTAR_BUILD_OBJECTS)
+	$(CC) $(LDFLAGS) $(CTAR_BUILD_OBJECTS) $(LOADLIBES) $(LDLIBS) -o $(EXECUTABLE_NAME_CTAR)
 
 # Standard build
 .PHONY: $(EXECUTABLE_NAME_UTAR)
-$(EXECUTABLE_NAME_UTAR): utar.c
-	$(CC) $(LDFLAGS) $(BUILD_OBJECTS) $(LOADLIBES) $(LDLIBS) -o $(EXECUTABLE_NAME_UTAR)
+$(EXECUTABLE_NAME_UTAR): $(UTAR_BUILD_OBJECTS)
+	$(CC) $(LDFLAGS) $(UTAR_BUILD_OBJECTS) $(LOADLIBES) $(LDLIBS) -o $(EXECUTABLE_NAME_UTAR)
 
 # Enable all debug symbols
 .PHONY: debug
