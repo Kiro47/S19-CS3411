@@ -20,6 +20,31 @@ typedef struct
 } tarHeader;
 
 /*
+ * parseActions(char **argv)
+ *      Returns single char flag for action type.
+ *      assumes argv is at least of length 2.
+ *      assumes flag format of '-[:alpha:]'
+ *  argv: CLI args passed into program executable, args assumed to
+ *        be at position 1 in array.
+ *
+ *  returns:
+ *      char: action flag of cli args
+ */
+char parseActions(char **argv);
+
+/*
+ * doesFileExist(char *filename)
+ *      Checks if a file of filename exists already
+ *  filename: Name/path of the file to check for
+ *
+ *  returns:
+ *      int:
+ *          -1 if an error occured opening file
+ *           0 if file is readable and exists
+ */
+int doesFileExist(char *filename);
+
+/*
  *  writeToFile()
  *      Write the contents of an address range (startOfFile - endOfFile)
  *      at the address point of writePoint

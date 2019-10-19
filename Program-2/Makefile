@@ -20,6 +20,8 @@ SOURCE_FILES := $(shell find $(SOURCE_DIRS) -name '*.cpp' -or -name '*.c' -or -n
 BUILD_OBJECTS := $(addsuffix .o,$(basename $(SOURCE_FILES)))
 BUILD_DEPENDENCIES := $(BUILD_OBJECTS:.o=.d)
 
+debug: CC_FLAGS += -ggdb
+
 # To prevent conflicting "main" methods
 CTAR_BUILD_OBJECTS := $(filter-out ./$(EXECUTABLE_NAME_UTAR).o,$(BUILD_OBJECTS))
 UTAR_BUILD_OBJECTS := $(filter-out ./$(EXECUTABLE_NAME_CTAR).o,$(BUILD_OBJECTS))
@@ -43,8 +45,9 @@ $(EXECUTABLE_NAME_UTAR): $(UTAR_BUILD_OBJECTS)
 
 # Enable all debug symbols
 .PHONY: debug
-debug:$(BUILD_OBJECTS)
-	$(CC) $(LDFLAGS) $(BUILD_OBJECTS) $(LOADLIBES) $(LDLIBS) -ggdb -o $(EXECUTABLE_NAME)
+debug:$(UTAR_BUILD_OBJECTS) $(CTAR_BUILD_OBJECTS)
+	$(CC) $(LDFLAGS) $(CTAR_BUILD_OBJECTS) $(LOADLIBES) $(LDLIBS) -o $(EXECUTABLE_NAME_CTAR)
+	$(CC) $(LDFLAGS) $(UTAR_BUILD_OBJECTS) $(LOADLIBES) $(LDLIBS) -o $(EXECUTABLE_NAME_UTAR)
 
 # Run through valgrind to check for mem leaks
 # Pass PARGS=$args on make command to pass for usage

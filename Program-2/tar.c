@@ -1,9 +1,77 @@
 #include "tar.h"
 
+#include <ctype.h>
+#include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <fcntl.h>
 
+/*
+ * parseActions(char **argv)
+ *      Returns single char flag for action type.
+ *      assumes argv is at least of length 2.
+ *      assumes flag format of '-[:alpha:]'
+ *  argv: CLI args passed into program executable, args assumed to
+ *        be at position 1 in array.
+ *
+ *  returns:
+ *      char: action flag of cli args
+ */
+char parseActions(char **argv)
+{
+    // We're only using single var flags
+    if (strlen(argv[1]) != 2)
+    {
+        return 0;
+    }
+
+    // Check for flag delimiter
+    if (argv[1][0] != '-')
+    {
+        return 0;
+    }
+
+    // Get action flag
+    if (isalpha(argv[1][1]))
+    {
+        return argv[1][1];
+    }
+    // No flag still returning nothing
+    return 0;
+}
+
+/*
+ * doesFileExist(char *filename)
+ *      Checks if a file of filename exists already
+ *  filename: Name/path of the file to check for
+ *
+ *  returns:
+ *      int:
+ *          -1 if an error occured opening file
+ *           0 if file is readable and exists
+ */
+int doesFileExist(char *filename)
+{
+    int fileDescriptor;
+    int returnValue;
+
+    fileDescriptor = open(filename, O_RDONLY);
+
+    if (fileDescriptor < 0)
+    {
+        print("Error opening file [%s], err: [%d]\n", filename, errno);
+        returnValue = -1;
+    }
+    else
+    {
+        returnValue = 0;
+    }
+
+    // Close file
+    close(fileDescriptor);
+    return returnValue;
+}
 
 /*
  *  writeToFile()
