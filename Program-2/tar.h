@@ -45,6 +45,19 @@ char parseActions(char **argv);
 int doesFileExist(char *filename);
 
 /*
+ *  verifyArchive(int fileDescriptor)
+ *      Verify that a file archive has a valid header and is not a random file
+ *
+ *  fileDescriptor: File descriptor to look at
+ *
+ *  returns:
+ *      int:
+ *          0 if invalid
+ *          1 if valid
+ */
+int verifyArchive(int fileDescriptor);
+
+/*
  *  writeToFile()
  *      Write the contents of an address range (startOfFile - endOfFile)
  *      at the address point of writePoint

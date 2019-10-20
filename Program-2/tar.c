@@ -6,6 +6,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <errno.h>
 
 /*
  * parseActions(char **argv)
@@ -50,6 +51,7 @@ char parseActions(char **argv)
  *      int:
  *          -1 if an error occured opening file
  *           0 if file is readable and exists
+ *           1 if file does not exist
  */
 int doesFileExist(char *filename)
 {
@@ -58,19 +60,68 @@ int doesFileExist(char *filename)
 
     fileDescriptor = open(filename, O_RDONLY);
 
-    if (fileDescriptor < 0)
+    print("error: %d\n",errno);
+    print("fd: %d\n",fileDescriptor);
+    print("error: %d\n", errno);
+    if (errno == 2)
     {
-        print("Error opening file [%s], err: [%d]\n", filename, errno);
-        returnValue = -1;
+        // No file exists
+        returnValue = 1;
     }
     else
     {
-        returnValue = 0;
+        if (fileDescriptor < 0)
+        {
+            print("Error opening file [%s], err: [%d]\n", filename, errno);
+            print(fileDescriptor);
+            returnValue = errno;
+        }
+        else
+        {
+            returnValue = 0;
+        }
     }
 
     // Close file
     close(fileDescriptor);
     return returnValue;
+}
+
+/*
+ *  verifyArchive(int fileDescriptor)
+ *      Verify that a file archive has a valid header and is not a random file
+ *
+ *  fileDescriptor: File descriptor to look at
+ *
+ *  returns:
+ *      int:
+ *          0 if invalid
+ *          1 if valid
+ */
+int verifyArchive(int fileDescriptor)
+{
+    tarHeader *header;
+    off_t offset;
+
+    header = malloc(sizeof(*header));
+
+    offset = lseek(fileDescriptor, 0, SEEK_SET);
+    // read in header
+    read(fileDescriptor, header, sizeof(*header));
+
+    int magic;
+    magic = header->magic;
+
+    if (header->magic == TAR_MAGIC_VAL)
+    {
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
+
+    return (header->magic == TAR_MAGIC_VAL) ? 1 : 0;
 }
 
 /*

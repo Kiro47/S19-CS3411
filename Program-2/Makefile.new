@@ -1,6 +1,0 @@
-all: testtar ctar
-
-testtar: testtar.c
-	gcc testtar.c -o testtar
-utar: utar.c
-	gcc utar.c -o utar
