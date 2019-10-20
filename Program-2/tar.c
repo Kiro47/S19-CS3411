@@ -60,9 +60,8 @@ int doesFileExist(char *filename)
 
     fileDescriptor = open(filename, O_RDONLY);
 
-    print("error: %d\n",errno);
-    print("fd: %d\n",fileDescriptor);
-    print("error: %d\n", errno);
+    print("fd: %d\n", fileDescriptor);
+    print("err: %d\n", errno);
     if (errno == 2)
     {
         // No file exists
@@ -109,19 +108,45 @@ int verifyArchive(int fileDescriptor)
     // read in header
     read(fileDescriptor, header, sizeof(*header));
 
-    int magic;
-    magic = header->magic;
-
-    if (header->magic == TAR_MAGIC_VAL)
-    {
-        return 1;
-    }
-    else
-    {
-        return 0;
-    }
-
+    free(header);
     return (header->magic == TAR_MAGIC_VAL) ? 1 : 0;
+}
+
+/*
+ *  copyToArchive(int fdSrc, int fdArchive, int startLocation)
+ *          Copies a file at fdSrc to the archive file at startLocation
+ *
+ *  fdSrc:          fileDescriptor of file to copy from
+ *  fdArchive:      fileDescriptor of archive file to write to
+ *  startLocation:  Location to start writing at in the archive
+ *
+ *  Returns:
+ *      int:    Number of bytes copied
+ */
+int copyToArchive(int fdSrc, int fdArchive, int startLocation)
+{
+    int bytesRead;
+    char byteValue;
+    int totalBytesRead;
+
+    // Inits
+    bytesRead = 0;
+    byteValue = 0;
+    totalBytesRead = 0;
+
+    // Get to point
+    lseek(fdArchive, startLocation, SEEK_SET);
+    lseek(fdSrc, 0, SEEK_SET);
+
+    // Copy file
+    do
+    {
+        bytesRead = read(fdSrc, byteValue, sizeof(char));
+        write(fdArchive, byteValue, sizeof(char));
+        totalBytesRead += bytesRead;
+    } while (bytesRead <= 0);
+
+    return totalBytesRead;
 }
 
 /*
@@ -142,25 +167,47 @@ void writeToFile(int fileDescriptor, char** writeContents, int contentsSize)
  * findNextHeader()
  *      Searches a file for the next available tar header and sets the
  *      currency indicator to the very beggining of that header.
+ *
+ *      This assumes the currencyPointer is already at a header
  *  fileDescriptor: file descriptor of file to read from
+ *
+ *  returns:
+ *      int:
+ *          -2: No header found
+ *          -1: Not at header
+ *          0+: Location of header
  */
-void findNextHeader(int fileDescriptor)
+int findNextHeader(int fileDescriptor)
 {
     // Note currency indicators are shared across processes
-    char currentByte;
-    int byteCount;
+    // This assumes currency counter is at a byte offset
 
-    while (byteCount != 0)
-    {
-        // Read in byte by byte
-        read(fileDescriptor, &currentByte, sizeof(char));
-        // If it matches the magic value
-        // might need to handle this closer to bit by bit than byte by byte?
-        if (currentByte == TAR_MAGIC_VAL)
+    tarHeader *header;
+
+        // Read in header
+        read(fileDescriptor, header, sizeof(*header));
+
+        // Verify
+        if (header->magic != TAR_MAGIC_VAL)
         {
-            // read back by magic size
+            // No header
+            return -1;
         }
-    }
+        else
+        {
+            // Header is valid
+            if (header->next == 0)
+            {
+                // At latest header
+            }
+            else
+            {
+                // To next header
+                lseek(fileDescriptor, header->next, SEEK_SET);
+                read(fileDescriptor, header,, sizeof(*header));
+            }
+        }
+    return lseek(fileDescriptor, (sizeof(*header( * -1)), SEEK_CUR);)
 }
 
 //typedef struct

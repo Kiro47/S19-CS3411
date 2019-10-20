@@ -38,52 +38,155 @@ int createArchive(char* filename)
 {
     int existStatus;
     int fileDescriptor;
+    int verification;
     off_t offset;
-    tarHeader *header;
 
-    existStatus=  doesFileExist(filename);
-    if (!(existStatus))
+    existStatus = doesFileExist(filename);
+    if (existStatus <= 0)
     {
         return existStatus;
     }
     fileDescriptor = open(filename, O_RDWR|O_CREAT, 0644);
     // file descriptor shouldn't have the option of being neg due to above
 
-    // TODO: get file currency pointer
-
-    // if currency pointer is at 0
-    // dump in header
-    // else return since archive already exists
     offset = lseek(fileDescriptor, 0, SEEK_END);
     if (offset == 0)
     {
         // file is empty, construct header
-        header = malloc(sizeof(header));
-        header->magic           = TAR_MAGIC_VAL;
-        header->eop             = offset;
-        header->block_count     = 0;
-        header->file_size[0]    = 0;
-        header->file_size[1]    = 0;
-        header->file_size[2]    = 0;
-        header->file_size[3]    = 0;
-        header->deleted[0]      = 0;
-        header->deleted[1]      = 0;
-        header->deleted[2]      = 0;
-        header->deleted[3]      = 0;
-        header->file_name[0]    = 0;
-        header->file_name[1]    = 0;
-        header->file_name[2]    = 0;
-        header->file_name[3]    = 0;
-        header->next            = 0;
-
-        // Write in header
-        write(fileDescriptor, header, sizeof(*header));
+        addHeader(fileDescriptor);
     }
     // verify the file is an archive
-    //
-    verifyArchive(fileDescriptor);
-    // archives already created, nothing to do
+    verification = verifyArchive(fileDescriptor);
+    close(fileDescriptor);
+    return verification;
+}
 
+/*
+ * addHeader(int fileDescriptor)
+ *      Adds a new header to the file of fileDescriptor
+ *      Always adds to end of file
+ *  fileDescriptor: Descritptor of file to add too
+ */
+void addHeader(int fileDescriptor)
+{
+    off_t offset;
+    tarHeader header;
+
+    // go to end of file
+    offset = lseek(fileDescriptor, 0, SEEK_END);
+
+    // allocate
+    header = malloc(sizeof(*header));
+    // Construct
+    header->magic           = TAR_MAGIC_VAL;
+    header->eop             = offset + sizeof(*header);
+    header->block_count     = 0;
+    header->file_size[0]    = 0;
+    header->file_size[1]    = 0;
+    header->file_size[2]    = 0;
+    header->file_size[3]    = 0;
+    header->deleted[0]      = 0;
+    header->deleted[1]      = 0;
+    header->deleted[2]      = 0;
+    header->deleted[3]      = 0;
+    header->file_name[0]    = 0;
+    header->file_name[1]    = 0;
+    header->file_name[2]    = 0;
+    header->file_name[3]    = 0;
+    header->next            = 0;
+
+    // Write in header
+    write(fileDescriptor, header, sizeof(*header));
+    // Free
+    free(header);
+}
+
+/*
+ * addFile(char *archiveName, char *filename)
+ *      Adds the file filename to the archive
+ *
+ *  archiveName: Name of the archive to add to
+ *  filename:    name of the file to add
+ *
+ *  returns:
+ *      ?
+ */
+int addFile(char *archiveName, char *filename)
+{
+    int existStatus;
+    int fdNewFile;
+    int fdArchive;
+    int i;
+    int namePointer;
+    off_t headerLocation;
+    off_t archiveOffset;
+    off_t fileOffset;
+
+    tarHeader *header;
+
+    existStatus = doesFileExist(filename);
+    if (existStatus)
+    {
+        return existStatus;
+    }
+    // fd = fileDescriptor
+    // File exists and is readable
+    fdNewFile = open(filename, O_RDONLY);
+    fdArchive = open(archiveName, O_RDWR);
+    // Open archive and get header
+    headerLocation = lseek(fileDescriptor, 0, SEEK_SET);
+
+    read(archiveName, header, sizeof(*header));
+
+    while (header->next != 0)
+    {
+        // 4 hard coded from maximum files per header
+        for (i = 0; i < 4; i++)
+        {
+            if (header->file_name[i] == 0)
+            {
+                // Use this index as next file header
+                break;
+            }
+        }
+        if (i >= 4)
+        {
+            nextHeader = findNextHeader(fdArchive);
+
+            if (nextHeader == -2)
+            {
+                // make new header
+                addHeader(fdArchive);
+                i = 0;
+                break;
+            }
+            else
+            {
+                headerLocation = lseek(fdArchive, nextHeader, SEEK_SET);
+            }
+            read(fdArchive, header, sizeof(*header));
+        }
+        // just use the header
+        break;
+    }
+    // TODO: modify header
+    headerLocation = lseek(fdArchive, sizeof(*header) * -1, SEEK_CUR);
+    archiveOffset = lseek(fdArchive, 0, SEEK_END);
+
+    // Write in filename
+    write(fdArchive, filename, (strlen(filename) * sizeof(char)));
+    namePointer = lseek(fdArchive, 0, SEEK_CUR);
+    // Copy file
+    // construct header
+    header->magic           = TAR_MAGIC_VAL;
+    // namePointer hasn't moved yet, so we can abuse that
+    header->file_name[i]    = namePointer;
+    header->file_size[i]    = copyToArchive(fdNewFile, fdArchive, namePointer);
+    header->eop             = lseek(fdArchive, 0, SEEK_END);
+    header->block_count    += 1;
+    // Write back in header
+    lseek(fdArchive, headerLocation, SEEK_SET);
+    write(fdArchive. header, sizeof(*header));
 }
 
 int main(int argc, char** argv)
@@ -105,18 +208,27 @@ int main(int argc, char** argv)
     {
         case 'a':
             // Append
-            if (createArchive(argv[2]))
+            if (createArchive(argv[2]) >= 0)
             {
                 if (argc >= 4)
                 {
                     // Add files to archive
-
+                    int i;
+                    // Start at firt file to add name
+                    for (i = 3; i < (argc - 1); i++)
+                    {
+                        addFile(argv[2],argv[i]);
+                    }
+                }
+                else
+                {
+                    print("Created archive %s\n", argv[2]);
                 }
                 //
             }
             else
             {
-                print("Corrupted Archive, bailing...\n");
+                print("Corrupted Archive or error creating, bailing...\n");
             }
 
             break;
