@@ -44,6 +44,53 @@ char parseActions(char **argv)
 }
 
 /*
+ * getFilename(int fdArchive, int nameLocation)
+ *      Gets a filename from an archive and returns it
+ *      rememeber to free me!
+ *
+ *  fdArchive:      fileDescriptor of archive
+ *  nameLocation:   Position where filename starts (from header)
+ *
+ *  returns:
+ *      char*: filename string
+ */
+char* getFilename(int fdArchive, int nameLocation)
+{
+    // logSize = filled
+    // phySize = allocated
+    int logSize;
+    int phySize;
+    // Return string
+    char *string;
+    // Copied byte
+    char byte;
+
+    logSize = 0;
+    phySize = 1;
+
+    string = (char *)malloc(sizeof(char));
+
+    //get a char from user, first time outside the loop
+    byte = pread(fdArchive, string, sizeof(char), nameLocation++);
+
+    //define the condition to stop receiving data
+    while(byte != 0x0)
+    {
+        if(logSize == phySize)
+        {
+            phySize *= 2;
+            string = (char *)realloc(string, sizeof(char) * phySize);
+        }
+        string[logSize++] = byte;
+        byte = pread(fdArchive, string, sizeof(char), nameLocation++);
+    }
+    //here we diminish string to actual logical size, plus one for \0
+    string = (char *)realloc(string, sizeof(char *) * (logSize + 1));
+    string[logSize] = '\0';
+    return string;
+}
+
+/*
  * doesFileExist(char *filename)
  *      Checks if a file of filename exists already
  *  filename: Name/path of the file to check for

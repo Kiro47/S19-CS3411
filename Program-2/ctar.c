@@ -103,6 +103,45 @@ void addHeader(int fileDescriptor)
     free(header);
 }
 
+
+/*
+ * checkFileDuplicates(int fdArchive, char *filename)
+ *      Checks if filename is a duplicate
+ */
+int checkFileDuplicates(int fdArchive, char *filename)
+{
+    tarHeader *header;
+    char checkFile;
+    int i;
+
+    header = malloc(sizeof(*header));
+    pread(fdArchive, header, sizeof(*header), 0);
+
+    do
+    {
+        // 4 hard coded from header assignment
+        for (i = 0; i < 4; i++)
+        {
+            if (header->file_name[i] != 0)
+            {
+                checkFile = getFilename(fdArchive,header->file_name[i]);
+                if (strcmp(filename , &checkFile) == 0)
+                {
+                    // filenames are the same
+                    return 1;
+                }
+            }
+        }
+        if (i <= 4)
+        {
+            pread(fdArchive, header, sizeof(*header), header->next);
+        }
+    }while((header != 0) && (header->next != 0));
+
+    free(header);
+    return 0;
+}
+
 /*
  * addFile(char *archiveName, char *filename)
  *      Adds the file filename to the archive
@@ -110,8 +149,6 @@ void addHeader(int fileDescriptor)
  *  archiveName: Name of the archive to add to
  *  filename:    name of the file to add
  *
- *  returns:
- *      ?
  */
 int addFile(char *archiveName, char *filename)
 {
@@ -137,6 +174,14 @@ int addFile(char *archiveName, char *filename)
     // File exists and is readable
     fdNewFile = open(filename, O_RDONLY, 0644);
     fdArchive = open(archiveName, O_RDWR, 0644);
+
+
+    if (checkFileDuplicates(fdArchive, filename) != 0)
+    {
+        print("File [%s] is already in the archive!\n", filename);
+        close(fdNewFile);
+        close(fdArchive);
+    }
 
     header = malloc(sizeof(*header));
 
