@@ -1,6 +1,8 @@
 #include "utils.h"
 #include "tar.h"
 
+#include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -22,7 +24,7 @@ void print_help(int invalid)
 	print("To extract contents of the archive file :\n");
 	print("utar <archive-file-name>\n");
 }
-
+void addHeader(int fileDescriptor);
 /*
  * createArchive(char* filename)
  *      Creates an empty archive if one does not
@@ -70,7 +72,7 @@ int createArchive(char* filename)
 void addHeader(int fileDescriptor)
 {
     off_t offset;
-    tarHeader header;
+    tarHeader *header;
 
     // go to end of file
     offset = lseek(fileDescriptor, 0, SEEK_END);
@@ -121,6 +123,7 @@ int addFile(char *archiveName, char *filename)
     off_t headerLocation;
     off_t archiveOffset;
     off_t fileOffset;
+    int nextHeader;
 
     tarHeader *header;
 
@@ -134,9 +137,9 @@ int addFile(char *archiveName, char *filename)
     fdNewFile = open(filename, O_RDONLY);
     fdArchive = open(archiveName, O_RDWR);
     // Open archive and get header
-    headerLocation = lseek(fileDescriptor, 0, SEEK_SET);
+    headerLocation = lseek(fdArchive, 0, SEEK_SET);
 
-    read(archiveName, header, sizeof(*header));
+    read(fdArchive, header, sizeof(*header));
 
     while (header->next != 0)
     {
@@ -186,7 +189,7 @@ int addFile(char *archiveName, char *filename)
     header->block_count    += 1;
     // Write back in header
     lseek(fdArchive, headerLocation, SEEK_SET);
-    write(fdArchive. header, sizeof(*header));
+    write(fdArchive, header, sizeof(*header));
 }
 
 int main(int argc, char** argv)

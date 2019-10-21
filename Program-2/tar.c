@@ -1,6 +1,7 @@
 #include "tar.h"
 
 #include <ctype.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -141,8 +142,8 @@ int copyToArchive(int fdSrc, int fdArchive, int startLocation)
     // Copy file
     do
     {
-        bytesRead = read(fdSrc, byteValue, sizeof(char));
-        write(fdArchive, byteValue, sizeof(char));
+        bytesRead = read(fdSrc, &byteValue, sizeof(char));
+        write(fdArchive, &byteValue, sizeof(char));
         totalBytesRead += bytesRead;
     } while (bytesRead <= 0);
 
@@ -204,10 +205,10 @@ int findNextHeader(int fileDescriptor)
             {
                 // To next header
                 lseek(fileDescriptor, header->next, SEEK_SET);
-                read(fileDescriptor, header,, sizeof(*header));
+                read(fileDescriptor, header, sizeof(*header));
             }
         }
-    return lseek(fileDescriptor, (sizeof(*header( * -1)), SEEK_CUR);)
+    return lseek(fileDescriptor, (sizeof(*header) * -1), SEEK_CUR);
 }
 
 //typedef struct
