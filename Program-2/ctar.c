@@ -184,7 +184,7 @@ int addFile(char *archiveName, char *filename)
     // Write in filename
     filenameTerm = malloc((strlen(filename) + 1) * sizeof(char));
     strcpy(filenameTerm, filename);
-    filenameTerm[strlen(filename) + 1] = '\0';
+    filenameTerm[strlen(filename) + 1] = 0x0;
     write(fdArchive, filenameTerm, (strlen(filenameTerm) * sizeof(char)));
 
     // Copy file
@@ -192,12 +192,18 @@ int addFile(char *archiveName, char *filename)
     header->magic           = TAR_MAGIC_VAL;
     // namePointer hasn't moved yet, so we can abuse that
     header->file_name[i]    = namePointer;
-    header->file_size[i]    = copyToArchive(fdNewFile, fdArchive, namePointer);
+    header->file_size[i]    = copyToArchive(fdNewFile, fdArchive, (namePointer
+                + (sizeof(char) * strlen(filenameTerm) + 1)));
     header->eop             = lseek(fdArchive, 0, SEEK_END);
     header->block_count    += 1;
     // Write back in header
     lseek(fdArchive, headerLocation, SEEK_SET);
     write(fdArchive, header, sizeof(*header));
+    // Clean up
+    free(header);
+    free(filenameTerm);
+    close(fdArchive);
+    close(fdNewFile);
 }
 
 int main(int argc, char** argv)
@@ -226,7 +232,7 @@ int main(int argc, char** argv)
                     // Add files to archive
                     int i;
                     // Start at firt file to add name
-                    for (i = 3; i < (argc - 1); i++)
+                    for (i = 3; i < argc; i++)
                     {
                         addFile(argv[2],argv[i]);
                     }
