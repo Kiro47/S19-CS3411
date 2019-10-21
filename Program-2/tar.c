@@ -59,10 +59,15 @@ int doesFileExist(char *filename)
     int fileDescriptor;
     int returnValue;
 
-    fileDescriptor = open(filename, O_RDONLY);
+    fileDescriptor = open(filename, O_RDONLY, 0444);
 
     print("fd: %d\n", fileDescriptor);
     print("err: %d\n", errno);
+    // TODO: strip
+    if (errno != 0)
+    {
+        perror("Error: ");
+    }
     if (errno == 2)
     {
         // No file exists
@@ -145,7 +150,7 @@ int copyToArchive(int fdSrc, int fdArchive, int startLocation)
         bytesRead = read(fdSrc, &byteValue, sizeof(char));
         write(fdArchive, &byteValue, sizeof(char));
         totalBytesRead += bytesRead;
-    } while (bytesRead <= 0);
+    } while (bytesRead > 0);
 
     return totalBytesRead;
 }

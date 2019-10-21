@@ -124,6 +124,7 @@ int addFile(char *archiveName, char *filename)
     off_t archiveOffset;
     off_t fileOffset;
     int nextHeader;
+    char *filenameTerm;
 
     tarHeader *header;
 
@@ -134,14 +135,17 @@ int addFile(char *archiveName, char *filename)
     }
     // fd = fileDescriptor
     // File exists and is readable
-    fdNewFile = open(filename, O_RDONLY);
-    fdArchive = open(archiveName, O_RDWR);
+    fdNewFile = open(filename, O_RDONLY, 0644);
+    fdArchive = open(archiveName, O_RDWR, 0644);
+
+    header = malloc(sizeof(*header));
+
     // Open archive and get header
     headerLocation = lseek(fdArchive, 0, SEEK_SET);
 
     read(fdArchive, header, sizeof(*header));
 
-    while (header->next != 0)
+    do
     {
         // 4 hard coded from maximum files per header
         for (i = 0; i < 4; i++)
@@ -171,14 +175,18 @@ int addFile(char *archiveName, char *filename)
         }
         // just use the header
         break;
-    }
+    } while (header->next != 0);
+
     // TODO: modify header
     headerLocation = lseek(fdArchive, sizeof(*header) * -1, SEEK_CUR);
     archiveOffset = lseek(fdArchive, 0, SEEK_END);
-
-    // Write in filename
-    write(fdArchive, filename, (strlen(filename) * sizeof(char)));
     namePointer = lseek(fdArchive, 0, SEEK_CUR);
+    // Write in filename
+    filenameTerm = malloc((strlen(filename) + 1) * sizeof(char));
+    strcpy(filenameTerm, filename);
+    filenameTerm[strlen(filename) + 1] = '\0';
+    write(fdArchive, filenameTerm, (strlen(filenameTerm) * sizeof(char)));
+
     // Copy file
     // construct header
     header->magic           = TAR_MAGIC_VAL;
