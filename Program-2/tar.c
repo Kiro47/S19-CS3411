@@ -71,7 +71,7 @@ char* getFilename(int fdArchive, int nameLocation)
     string = (char *)malloc(sizeof(char));
 
     //get a char from user, first time outside the loop
-    byte = pread(fdArchive, string, sizeof(char), nameLocation++);
+    pread(fdArchive, &byte, sizeof(char), nameLocation++);
 
     //define the condition to stop receiving data
     while(byte != 0x0)
@@ -82,7 +82,7 @@ char* getFilename(int fdArchive, int nameLocation)
             string = (char *)realloc(string, sizeof(char) * phySize);
         }
         string[logSize++] = byte;
-        byte = pread(fdArchive, string, sizeof(char), nameLocation++);
+        pread(fdArchive, &byte, sizeof(char), nameLocation++);
     }
     //here we diminish string to actual logical size, plus one for \0
     string = (char *)realloc(string, sizeof(char *) * (logSize + 1));
@@ -108,8 +108,6 @@ int doesFileExist(char *filename)
 
     fileDescriptor = open(filename, O_RDONLY, 0444);
 
-    print("fd: %d\n", fileDescriptor);
-    print("err: %d\n", errno);
     // TODO: strip
     if (errno != 0)
     {

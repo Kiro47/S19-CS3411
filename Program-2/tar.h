@@ -58,6 +58,20 @@ int doesFileExist(char *filename);
 int verifyArchive(int fileDescriptor);
 
 /*
+ * getFilename(int fdArchive, int nameLocation)
+ *      Gets a filename from an archive and returns it
+ *      rememeber to free me!
+ *
+ *  fdArchive:      fileDescriptor of archive
+ *  nameLocation:   Position where filename starts (from header)
+ *
+ *  returns:
+ *      char*: filename string
+ */
+char* getFilename(int fdArchive, int nameLocation);
+
+
+/*
  *  writeToFile()
  *      Write the contents of an address range (startOfFile - endOfFile)
  *      at the address point of writePoint

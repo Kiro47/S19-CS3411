@@ -111,7 +111,7 @@ void addHeader(int fileDescriptor)
 int checkFileDuplicates(int fdArchive, char *filename)
 {
     tarHeader *header;
-    char checkFile;
+    char *checkFile;
     int i;
 
     header = malloc(sizeof(*header));
@@ -125,7 +125,7 @@ int checkFileDuplicates(int fdArchive, char *filename)
             if (header->file_name[i] != 0)
             {
                 checkFile = getFilename(fdArchive,header->file_name[i]);
-                if (strcmp(filename , &checkFile) == 0)
+                if (strcmp(filename , checkFile) == 0)
                 {
                     // filenames are the same
                     return 1;
@@ -178,7 +178,7 @@ int addFile(char *archiveName, char *filename)
 
     if (checkFileDuplicates(fdArchive, filename) != 0)
     {
-        print("File [%s] is already in the archive!\n", filename);
+        print("File: [%s] is already in the archive!\n", filename);
         close(fdNewFile);
         close(fdArchive);
     }
