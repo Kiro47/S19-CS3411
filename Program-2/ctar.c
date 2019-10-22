@@ -66,6 +66,40 @@ int createArchive(char* filename)
 }
 
 /*
+ * deleteFile(char *archiveName, char *filename);
+ *      "Deletes" a file from an archive by ignoring it
+ *
+ * archiveName: File to be removed from
+ * filename:    File to be "removed"
+ */
+void deleteFile(char *archiveName, char *filename)
+{
+    int fdArchive;
+    // Check if archive even exists
+    if (doesFileExist(archiveName) != 0)
+    {
+        print("Archive does not exist!\n");
+        return;
+    }
+    // Check if archive is valid
+    fdArchive = open(archiveName, O_RDWR, 0644);
+    if (verifyArchive(fdArchive) != 1)
+    {
+        print("Invalid archive!\n");
+        return;
+    }
+    // Valid, no go find if the filename exists
+    if (checkFileDuplicates(fdArchive, filename, 0) != 1)
+    {
+        print("File [%s] does not exist in archive!\n", filename);
+        return;
+    }
+
+
+
+}
+
+/*
  * addHeader(int fileDescriptor)
  *      Adds a new header to the file of fileDescriptor
  *      Always adds to end of file
@@ -110,14 +144,16 @@ void addHeader(int fileDescriptor)
  * checkFileDuplicates(int fdArchive, char *filename)
  *      Checks if filename is a duplicate
  */
-int checkFileDuplicates(int fdArchive, char *filename)
+int checkFileDuplicates(int fdArchive, char *filename, int remove)
 {
     tarHeader *header;
     char *checkFile;
     int i;
+    int headerLocation;
 
     header = malloc(sizeof(*header));
     pread(fdArchive, header, sizeof(*header), 0);
+    headerLocation = 0;
 
     do
     {
@@ -130,12 +166,19 @@ int checkFileDuplicates(int fdArchive, char *filename)
                 if (strcmp(filename , checkFile) == 0)
                 {
                     // filenames are the same
+                    if (remove == 1)
+                    {
+                        header->deleted[i] = 1;
+                        header->block_count -= 1;
+                        pwrite(fdArchive, header, sizeof(*header), headerLocation);
+                    }
                     return 1;
                 }
             }
         }
         if (i <= 4)
         {
+            headerLocation = header->next;
             pread(fdArchive, header, sizeof(*header), header->next);
         }
     }while((header != 0) && (header->next != 0));
@@ -178,7 +221,7 @@ int addFile(char *archiveName, char *filename)
     fdArchive = open(archiveName, O_RDWR, 0644);
 
 
-    if (checkFileDuplicates(fdArchive, filename) != 0)
+    if (checkFileDuplicates(fdArchive, filename, 0) != 0)
     {
         print("File: [%s] is already in the archive!\n", filename);
         close(fdNewFile);
@@ -257,7 +300,7 @@ int main(int argc, char** argv)
 {
     int retValue;
     char action;
-
+    int i;
     if (argc < 3)
     {
 
@@ -277,7 +320,7 @@ int main(int argc, char** argv)
                 if (argc >= 4)
                 {
                     // Add files to archive
-                    int i;
+
                     // Start at firt file to add name
                     for (i = 3; i < argc; i++)
                     {
@@ -297,7 +340,18 @@ int main(int argc, char** argv)
 
             break;
         case 'd':
-            createArchive(argv[2]);
+            if (doesFileExist(argv[2]) != 0)
+            {
+                print("Archive does not exist!\n");
+                return 1;
+            }
+            else
+            {
+                for (i = 3; i < argc; i++)
+                {
+                    deleteFile(argv[2], argv[i]);
+                }
+            }
             // Delete file
             break;
         default:
