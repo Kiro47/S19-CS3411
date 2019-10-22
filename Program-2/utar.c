@@ -5,6 +5,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <stdlib.h>
+#include <string.h>
 #include <fcntl.h>
 
 void printHelp(int invalid)
@@ -23,7 +24,7 @@ void writeNewFile(int fdArchive, int fdNewFile, int fileSize)
     totalBytesRead = 0;
     lseek(fdNewFile, 0, SEEK_SET);
 
-    while (bytesRead <= fileSize)
+    while (totalBytesRead <= fileSize)
     {
         bytesRead = read(fdArchive, &byte, sizeof(char));
         write(fdNewFile, &byte, sizeof(char));
@@ -83,7 +84,7 @@ int unpackArchive(char *archiveName)
                 // File exists and *should* be unpacked
                 filename = getFilename(fdArchive, header->file_name[i]);
                 // Tests if we should write
-                if (doesFileExist(filename) != 0)
+                if (doesFileExist(filename) == 0)
                 {
                     print("File already exists!  Stopping unpack.\n");
                     free(header);
@@ -93,6 +94,7 @@ int unpackArchive(char *archiveName)
                 // Unpack file
                 fdUnpack = open(filename, O_RDWR|O_CREAT, 0644);
                 // NOTE: assumes no other fdArchive actions have taken place
+                lseek(fdArchive, strlen(filename) + 1, SEEK_CUR);
                 writeNewFile(fdArchive, fdUnpack, header->file_size[i]);
                 close(fdUnpack);
             }
@@ -128,12 +130,12 @@ int main(int argc, char **argv)
     else
     {
         existStatus = doesFileExist(argv[1]);
-        if (existStatus = -1)
+        if (existStatus == -1)
         {
             print("Error occured opening file [%s]\n", argv[1]);
             return -1;
         }
-        else if (existStatus = 1)
+        else if (existStatus == 1)
         {
             print("File [%s] does not exist!\n", argv[1]);
             return 1;
