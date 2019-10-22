@@ -6,11 +6,11 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
-    
+
     steps:
     - uses: actions/checkout@v1
     - name: installs dep
-      run: apt install clang-tidy
+      run: sudo apt install clang-tidy
     - name: make check-style
       run: make check-style -C Program-2/
     - name: make
