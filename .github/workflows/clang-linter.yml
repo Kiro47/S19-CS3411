@@ -10,7 +10,7 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - name: installs dep
-      run: sudo apt install clang-tidy
+      run: sudo apt update && sudo apt install -y clang-tidy
     - name: make check-style
       run: make check-style -C Program-2/
     - name: make
