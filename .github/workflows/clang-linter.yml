@@ -9,6 +9,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v1
+    - name: installs dep
+      run: sudo apt update && sudo apt install -y clang-6.0 clang-tidy
     - name: make check-style
       run: make check-style -C Program-2/
     - name: make
