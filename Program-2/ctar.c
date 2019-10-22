@@ -11,6 +11,12 @@
 
 void addHeader(int fileDescriptor);
 
+/*
+ * print_help
+ *      Prints help menu
+ *
+ *  invalid:  To print if invalid syntax is used
+ */
 void print_help(int invalid)
 {
     if (invalid)
@@ -23,8 +29,6 @@ void print_help(int invalid)
 	print("ctar -a <archive-file-name> file1 file2 ... filen\n");
 	print("To delete a file from the archive :\n");
 	print("ctar -d <archive-file-name> <file-to-be-deleted>\n");
-	print("To extract contents of the archive file :\n");
-	print("utar <archive-file-name>\n");
 }
 
 /*
@@ -297,6 +301,17 @@ int addFile(char *archiveName, char *filename)
     close(fdNewFile);
 }
 
+/*
+ * main(int argc, char** argv)
+ *      Program entry point
+ *
+ * argc:    Number of cli args
+ * argv:    CLI args array
+ *
+ * return:
+ *  int:
+ *      Program exit code
+ */
 int main(int argc, char** argv)
 {
     int retValue;

@@ -8,12 +8,27 @@
 #include <string.h>
 #include <fcntl.h>
 
+/*
+ * printHelp(int invalid)
+ *      print the help menu
+ *
+ * invalid: if the syntax was invalid
+ *
+ */
 void printHelp(int invalid)
 {
     print("To extract contents of the archive file :\n");
     print("utar <archive-file-name>\n");
 }
 
+/*
+ * writeNewFile(int fdArchive, int fdNewFile, int fileSize)
+ *      Writes a file from fdArchive, at fdNewFile, of size fileSize
+ *
+ *  fdArchive:  File Descriptor of archive
+ *  fdNewFile:  File Descriptor of new file to make
+ *  fileSize:   Size of new file that is being created
+ */
 void writeNewFile(int fdArchive, int fdNewFile, int fileSize)
 {
     int bytesRead;
@@ -105,6 +120,12 @@ int unpackArchive(char *archiveName)
     return 0;
 }
 
+
+// Apparently this was never meant to be added, but is a nice feature
+/*
+ * listFiles()
+ *      List all files in the archive
+ */
 void listFiles()
 {
 

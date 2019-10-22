@@ -262,14 +262,3 @@ int findNextHeader(int fileDescriptor)
         }
     return lseek(fileDescriptor, (sizeof(*header) * -1), SEEK_CUR);
 }
-
-//typedef struct
-//{
-//  int  magic;             /* This must have the value  0x63746172.                        */
-//  int  eop;               /* End of file pointer.                                         */
-//  int  block_count;       /* Number of entries in the block which are in-use.             */
-//  int  file_size[4];      /* File size in bytes for files 1..4                            */
-//  char deleted[4];        /* Contains binary one at position i if i-th entry was deleted. */
-//  int  file_name[4];      /* pointer to the name of the file.                             */
-//  int  next;              /* pointer to the next header block.                            */
-//} tarHeader;
