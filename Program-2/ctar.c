@@ -9,6 +9,8 @@
 #include <stdlib.h>
 #include <fcntl.h>
 
+void addHeader(int fileDescriptor);
+
 void print_help(int invalid)
 {
     if (invalid)
@@ -24,7 +26,7 @@ void print_help(int invalid)
 	print("To extract contents of the archive file :\n");
 	print("utar <archive-file-name>\n");
 }
-void addHeader(int fileDescriptor);
+
 /*
  * createArchive(char* filename)
  *      Creates an empty archive if one does not
