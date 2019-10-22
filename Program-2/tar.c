@@ -87,6 +87,7 @@ char* getFilename(int fdArchive, int nameLocation)
     //here we diminish string to actual logical size, plus one for \0
     string = (char *)realloc(string, sizeof(char *) * (logSize + 1));
     string[logSize] = '\0';
+    free(string);
     return string;
 }
 

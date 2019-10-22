@@ -100,6 +100,7 @@ int unpackArchive(char *archiveName)
             }
         }
     } while(header->next != 0);
+    close(fdArchive);
     free(header);
     return 0;
 }

@@ -172,6 +172,7 @@ int checkFileDuplicates(int fdArchive, char *filename, int remove)
                         header->block_count -= 1;
                         pwrite(fdArchive, header, sizeof(*header), headerLocation);
                     }
+                    free(header);
                     return 1;
                 }
             }
