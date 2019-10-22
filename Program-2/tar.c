@@ -111,7 +111,6 @@ int doesFileExist(char *filename)
     // TODO: strip
     if (errno != 0)
     {
-        perror("Error: ");
     }
     if (errno == 2)
     {
@@ -152,6 +151,7 @@ int verifyArchive(int fileDescriptor)
 {
     tarHeader *header;
     off_t offset;
+    int returnValue;
 
     header = malloc(sizeof(*header));
 
@@ -159,8 +159,9 @@ int verifyArchive(int fileDescriptor)
     // read in header
     read(fileDescriptor, header, sizeof(*header));
 
+    returnValue = ((header->magic == TAR_MAGIC_VAL) ? 1 : 0);
     free(header);
-    return (header->magic == TAR_MAGIC_VAL) ? 1 : 0;
+    return returnValue;
 }
 
 /*
