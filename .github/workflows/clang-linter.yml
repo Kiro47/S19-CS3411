@@ -3,6 +3,11 @@ name: Clang-tidy linter
 on: [push]
 
 jobs:
+  lint:
+    steps:
+      - name: clang-tidy check
+        uses: muxee/clang-tidy-action@0.0.1-rc1
+
   build:
 
     runs-on: ubuntu-latest
@@ -11,7 +16,5 @@ jobs:
     - uses: actions/checkout@v1
     - name: installs dep
       run: sudo apt update && sudo apt install -y clang-6.0 clang-tidy
-    - name: make check-style
-      run: make check-style -C Program-2/
     - name: make
       run: make -C Program-2/
