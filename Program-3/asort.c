@@ -70,6 +70,52 @@ int doesDirExist(char *dirName)
     return returnVal;
 }
 
+int makeDir(const char *dirName)
+{
+    if (mkdir(dirName, 0755) != 0)
+    {
+        switch(errno)
+        {
+            case EACCES:
+                print("Error, cannot create directory.\n");
+                break;
+            case EDQUOT:
+                print("Error, over allocation quota.\n");
+                break;
+            case EEXIST:
+                // You should never get here actually.
+                // Already exists, don't care?
+                return 0;
+            case ELOOP:
+                print("Error, too many symbolic links\n.");
+                break;
+            case EMLINK:
+                print("Error, max links exceeded.\n");
+                break;
+            case ENAMETOOLONG:
+                print("Error, pathname too long.\n");
+                break;
+            case ENOENT:
+                print("Error, does not exist!\n");
+                break;
+            case ENOSPC:
+                print("Error, disk quot exhausted.\n");
+                break;
+            case EPERM:
+                print("Error, no permissions.\n");
+                break;
+            case EROFS:
+                print("Error, read only filesystem.\n");
+                break;
+            default:
+                print("Error, we don't know what went wrong.\n");
+                break;
+        }
+        return 1;
+    }
+    return 0;
+
+}
 /*
  * doesFileExist(char *fileName)
  *      Checks if a file exists
@@ -155,14 +201,14 @@ int main(int argc, char **argv)
     }
     */
 
+    OUTPUT_DIR = malloc(strlen(OUTPUT_DIR_STRING) * sizeof(char));
+    strcpy(OUTPUT_DIR, OUTPUT_DIR_STRING);
     // Check if dir exists, if not make it
     if (doesDirExist(OUTPUT_DIR) != 1)
     {
-        dirError = mkdir(OUTPUT_DIR, 0755);
-        if (dirError == -1)
+
+        if(makeDir(OUTPUT_DIR) != 0)
         {
-            print(strerror(errno));
-            print("Error creating directory [%s]\n", OUTPUT_DIR);
             return -1;
         }
     }
