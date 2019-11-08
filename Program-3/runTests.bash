@@ -31,7 +31,7 @@ single()
 {
   for i in {1..5};
   do
-    ./asort "TESTS/file${i}.txt"
+    valgrind --tool=memcheck --track-origins=yes --leak-check=full ./asort "TESTS/file${i}.txt"
     sha256sum "TESTS/file${i}.sorted"
     sha256sum "SORTED/file${i}.txt"
   done
@@ -39,7 +39,7 @@ single()
 
 all()
 {
-  ./asort TESTS/file*.txt
+  valgrind --tool=memcheck --track-origins=yes --leak-check=full ./asort TESTS/file*.txt
   for i in {1..5};
   do
     sha256sum "TESTS/file${i}.sorted"
