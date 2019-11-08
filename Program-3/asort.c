@@ -43,13 +43,20 @@ void helpMsg(char *progName)
  */
 int doesDirExist(char *dirName)
 {
-    struct stat stats;
-    stat(dirName, &stats);
-    if (S_ISDIR(stats.st_mode))
+    struct stat *stats;
+    int returnVal;
+    stats = malloc(sizeof(struct stat));
+    stat(dirName, stats);
+    if (S_ISDIR(stats->st_mode))
     {
-        return 1;
+        returnVal= 1;
     }
-    return 0;
+    else
+    {
+        returnVal = 0;
+    }
+    free(stats);
+    return returnVal;
 }
 
 /*
