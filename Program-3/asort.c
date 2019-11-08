@@ -183,7 +183,7 @@ int main(int argc, char **argv)
             strcpy(args[3], OUTPUT_DIR);
             strcat(args[3], argv[i]);
             args[4] = NULL;
-            execvp("ls",args);
+            execvp(BINARY_PROG,args);
             // Set return status if there's break in execvp
             pData[i-1].returnStatus = errno;
             return;
