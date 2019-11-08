@@ -44,7 +44,7 @@ debug:$(BUILD_OBJECTS)
 # Pass PARGS=$args on make command to pass for usage
 .PHONY: memory
 memory:debug
-	valgrind "$(shell pwd)/$(EXECUTABLE_NAME)" "$(PARGS)"
+	valgrind "--tool=memcheck --track-origins=yes --leak-check=full $(shell pwd)/$(EXECUTABLE_NAME)" "$(PARGS)"
 
 # Production build, debug symbols stripped
 .PHONY: prod
