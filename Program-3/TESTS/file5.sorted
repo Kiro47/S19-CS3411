@@ -1,0 +1,509 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+0.3 seconds and 3 minutes respectively WERE NOT THE DES.  There
+12 rounds were needed to sufficiently scramble the key and data
+  1981.
+  207213, American Bankers Association, Washington, DC, 1979.
+2315, the function, operation, or use of which:
+  (3) Cipher Feedback (CFB), and (4) Output Feedback (OFB).
+       5285 Port Royal Road
+  -    Access Control.  Software or hardware which protect
+       accomplishment of the mission of an operator of a federal
+accordance with the published algorithm.  Third, numerous
+       account balance reporting.
+A copy of the waiver, any supporting documents, the document
+Additionally, no waivers are currently required for use of Type
+  Administration as Federal Standard 1026.
+  Administration as Federal Standard 1027.
+  administrative procedures to be followed by those seeking formal
+affirmation of conformance to FIPS PUB 140 from vendors as
+Agency heads may act upon a written waiver request containing the
+  algorithm.
+algorithms that are similar to, but different from, the DES are
+Alternatively, users of the DES, including federal organizations,
+amendment to such notice.
+  American National Standard for Financial Institution Message
+  American National Standard for Personal Identification Number
+analyzed the algorithm and have concluded that the algorithm is
+       and are used by federal departments or agencies for
+an export license from the U.S. Department of Commerce is
+annually.  Very large electronic funds transfers should be
+ANSI X9.17, and the Secure Data Network System (SDNS) documents
+       any other purpose.
+Applicability
+applicable only to the protection of data communications.
+applications for the foreseeable future.
+applications.  It is currently the only cryptographic method to
+appropriate.
+approving the waiver and any supporting or accompanying
+are being readdressed.  Additionally, NIST is examining various
+  are defined as four specific stopping points in a general
+are no longer being endorsed for conformance to FIPS PUB 140
+are outside the scope of this document.
+As mentioned above, the heads of federal departments or agencies
+assistance program, please contact:
+  Association, Washington, DC, 1980.
+       assure no alteration of text has taken place, or to
+attacks in communications and storage systems.  It was assumed
+  Attention: FIPS Waiver Decisions
+       authenticate users, but does not allow for encryption of
+       authentication.
+  Authentication, ANSI X9.9-1982, 1430 Broadway, New York, NY.
+  -    Authentication.  Software or hardware which calculates a
+  Authentication (Wholesale).  The MVS is designed to perform
+authority shall be sent promptly to the Committee on Government
+  automated testing on message authentication devices which are
+  -    Automatic Teller Devices.  Devices limited to the issuance
+available from NIST.  The specifics of electronic key generation
+Background
+below.
+be properly formatted to assure high security.
+between the ciphertext and either the original data or key.
+be used in the federal government to protect unclassified
+       Building 225, Room A216
+       Building 225, Room A266
+       Bureau of Export Administration
+       Bureau of Politico-Military Affairs
+       by NSA (except for current voice only applications).
+called encryption.  The same algorithm is used with the same key
+       classified applications) cryptographic equipment;
+classified information or, as delineated in 10 U.S.C. Section
+  Communications
+  -    compliance with the standard would adversely affect the
+  -    compliance would cause a major adverse financial impact on
+  computed in the same manner as the Data Authentication Code as
+computer data (except that information described in 10 U.S.C.
+computer in 0.3 seconds and 3 minutes respectively.
+       computer-related proprietary information for the purpose of
+       Computer Security Division
+       Computer Security Division
+computer security program, including NIST's federal agency
+       computer system; or
+  consist of an iterative procedure that tests the operation of
+continue to provide more than adequate security for its intended
+Copies of these publications are for sale by the National
+Corporation and has been approved as American National Standard
+cost.  Contact your responsible Communications Security (COMSEC)
+countries (see Section 126.1 of the ITAR) are denied for foreign
+  -    cryptographic devices perform an algorithm other than DES
+cryptographic keys for these products from NSA upon request at no
+cryptographic keys using automated processes.  Information on
+cryptographic protection is required.  Note that the term
+       cryptographic protection of information;
+  Data Encryption Algorithm (DEA), ANSI X3.92-1981, 1430 Broadway,
+  Data Encryption Standard
+                DATA ENCRYPTION STANDARD FACT SHEET
+       data, text or other media other than that needed for the
+  data will be encrypted and decrypted.  The four modes are: (1)
+decides to make under 5 U.S.C. Section 552(b), shall be part of
+       decryption routines are not accessible to users of said
+decryption.  The DES consists of 16 "rounds" of operations that
+Defense develops and promulgates requirements for those
+Department of Commerce
+Department of Commerce has recently received many inquiries
+described below) when the agency or department determines that
+describing to whom the licensed products have been sold.  License
+DES Cryptographic Keys
+  DES devices using a small program and minimal data.  The tests
+DES for the protection of unclassified information as discussed
+DES has been incorporated into a number of other standards,
+  design and configuration of the MVS.  The requirements and
+  -    DES is implemented in a software-based system (See specific
+  -    DES is implemented in software for a limited special
+  -    DES is implemented in software for testing or evaluation
+DES may be used by private-sector individuals or organizations at
+DES products for use in telecommunications equipment and systems
+determined to be mathematically sound.  The effective length of
+developed Type II and Low-cost Encryption Authentication Devices
+  devices for conformance to two data authentication standards:
+devices offer equivalent cost/performance features when compared
+digital signatures, key exchange, exportable security).  NIST
+  Document 4.5.6, American Bankers Association, Washington, DC,
+documents, with such deletions as the agency is authorized and
+each such decision, with procurement-sensitive or classified
+either individual or distribution licenses.  Under a distribution
+  Electronic Codebook (ECB), (2) the Cipher Block Chaining (CBC),
+  Encryption Standard
+(end)
+Endorsement of DES Products
+  Equipment
+equipment and/or services, a notice of the waiver determination
+equipment that meets their needs, but has not been endorsed by
+equipment which may not meet all of the criteria in the standard.
+etc.
+(except information covered by 10 U.S.C. Section 2315, as
+       exclusions below.); or
+Exportability of DES Devices and Software Products
+       facilities, but does not allow for encryption of files or
+federal computer systems against a number of passive and active
+Federal Regulations (CFR), Parts 120 - 130, the International
+financial institutions or American subsidiaries abroad.  In
+  FIPS PUB 113 and ANSI X9.9-1986, Financial Institution Message
+  FIPS PUB 139, Interoperability and Security Requirements for Use
+  FIPS PUB 140, General Security Requirements for Equipment Using
+FIPS PUB 140 is currently under revision to be reissued as FIPS
+  FIPS PUB 140 was previously issued by the General Services
+  FIPS PUB 141, Interoperability and Security Requirements for Use
+  FIPS PUB 46-1, Data Encryption Standard
+(FIPS PUB) 46 in 1977, the DES was promulgated by NIST (then the
+  FIPS PUB 74, Guidelines for Implementation and Using the NBS
+  FIPS PUB 81 defines four modes of operation for DES which may be
+  FIPS PUB 81, DES Modes of Operation
+  FIPS PUP 113, Computer Data Authentication
+following categories of cryptographic products (including DES):
+Following this determination, the vendor will be informed whether
+       for encrypted proprietary software, fonts, or other
+for financial institutions while only individual licenses may be
+For further information regarding other aspects of NIST's
+formatting, mode of operation, implementation, application and
+(formerly Federal Standard 1027) by NSA.  NIST has notified the
+for the protection of sensitive unclassified data communications
+fundamental operations of permutation and substitution.  The goal
+Funds Transfer, privacy protection of personal information,
+       Gaithersburg, MD  20899
+       Gaithersburg, MD  20899
+  Gaithersburg, MD  20899
+general, either individual or distribution licenses may be used
+generation, distribution, storage, and destruction of
+Governmental Affairs of the Senate and shall be published
+government's sensitive unclassified computer information.  FIPS
+guidance concerning the use of National Security Agency (NSA)
+Hardware- and software- based implementations of DES are subject
+       have been approved for the protection of unclassified
+heads of federal departments that they may wish to consider
+II products for voice only applications.
+implementations noted below) rests with:
+In addition, notice of each waiver granted and each delegation of
+In addition, when a waiver is being considered to allow for the
+including:
+  increasing degree of completeness depending on the thoroughness
+       information.]
+information covered by 10 U.S.C. 2315.  Use of DES is currently
+information detailed above.  Agency heads may also act without a
+information.  The document is not designed to issue new policy;
+information to be obtained.  Applications included Electronic
+       intelligence mission.
+in the security it provides.  Thus, while the DES is sound, many
+Introduction
+  -    involves cryptologic activities related to national
+  -    involves equipment which is an integral part of a weapon or
+  -    involves intelligence activities;
+  -    involves the direct command and control of military forces;
+  -    is critical to the direct fulfillment of a military or
+IS NOT THE DES.  Cryptographically, any algorithm that is
+is only one DES and any change to it results in an algorithm that
+  ISO Open Systems Interconnection (OSI) Reference Model in
+is responsible for the granting of export licenses for the
+Issued as Federal Information Processing Standard Publication
+is to completely scramble the data and key so that every bit of
+ITAR, 22 CFR 120-130.
+its implementation, and modes of operation.
+  Key Management Standard, Document 4.3, American Bankers
+(LEAD) is planned to be issued in 1990.
+license, annual reports must be submitted by the distributor
+licenses, and necessary forms may be found in the CFR.
+Licenses are normally granted if the end users are either
+  (MAC) Validation System (MVS) to test message authentication
+  (MAC) Validation System: Requirements and Procedures
+       maintaining vendor control over said information when such
+  maintenance tests for the Data Encryption Standard.  The tests
+  management.
+  Management and Use of Personal Identification Numbers, Cat. No.
+       Manager, Security Technology Group
+mandatory for all federal agencies, including defense agencies,
+mathematical soundness, length of key, key management, input data
+may generate their own cryptographic keys.  DES keys must be
+may waive the mandatory use of DES.  This authority may be
+meeting the standard cannot be met.  Agency heads may approve
+  Message Authentication Code as specified in ANSI X9.9 is
+       Message Authentication Code (MAC) or similar result to
+methods for conducting conformance testing against the
+mix the data and key together is a prescribed manner using the
+  modifications, both intentional and accidental, to data.  The
+must be published in the Commerce Business Daily as a part of the
+National Bureau of Standards) to provide a system for the
+       National Computer Systems Laboratory
+       National Computer Systems Laboratory
+       National Institute of Standards and Technology
+       National Institute of Standards and Technology
+  National Institute of Standards and Technology
+       National Technical Information Service
+  NBS Special Publication 500-156, Message Authentication Code
+  NBS Special Publication 500-61, Maintenance Testing for the Data
+necessary.  The Bureau of Export Administration will provide
+  New York, NY.
+  New York, NY.
+NIST Documents
+NIST has determined that at least until 1993, the DES will
+NIST has issued FIPS PUBS and special publications regarding DES,
+NIST performs validations of products for compliance with FIPS
+NIST's Computer Security Program
+  NIST validation of a message authentication device are
+       [Note:  Type I products have been approved by NSA for the
+notice of solicitation for offers of an acquisition or, if the
+not sound.
+NSA.
+obtained by any change to the DES may be significantly different
+       of cash or travellers checks, acceptance of deposits, or
+       Office of Munitions Control
+officer for further information.
+  of testing desired.
+  of the Data Encryption Standard in the Physical Layer of Data
+  of the Data Encryption Standard With CCITT Group 3 Facsimile
+operation of 16 rounds would return the key back to its original
+Operations of the House of Representatives and the Committee on
+other cryptographic algorithms in a family of standards that will
+Other Documents
+       passwords or Personal Identification Numbers (PIN) or
+personal authentication, password protection, access control,
+  (PIN) Management and Security, ANSI X9.8-1982, 1430 Broadway,
+Please note that vendors whose products do not fall clearly into
+       P.O. Box 273
+policy reasons by the Department of State.
+portions clearly identified, shall be sent to:
+position in an electronic device for the next use when used in
+  presented.
+products for validation or to obtain a list of devices validated
+program is established, federal agencies may accept written
+promptly in the Federal Register.
+properly generated and managed in order to assure a high level of
+  -    Proprietary Software Protection.  Decryption-only routines
+protected individually with separate keys and the input data must
+       protection.
+       protection of classified information while Type II products
+  Protection of Personal Identification Numbers in Interchange,
+protection of the confidentiality and integrity of the federal
+protection to computer data.  Electronic Key Management includes
+provide other types of protection in special applications (e.g.,
+provides interested individuals with sources of additional
+  PUB 139 was previously issued by the General Services
+PUB 140-1.  All issues contained within the scope of the document
+PUB 46-1, reaffirms the standard until 1993.
+PUB 46 is based upon work by the International Business Machines
+PUBS 46 and 113.  For further information about submitting
+       purpose (e.g., encrypting password files).
+       purposes; or
+rather it summarizes and clarifies existing policies.  Additional
+recently in 1988.  The current standard, which was issued as FIPS
+redelegated only to a senior official designated pursuant to 44
+Reference Documents
+regarding export applications, application procedures, types of
+regarding various aspects of the Data Encryption Standard (DES).
+  remote to NIST.  This publication provides brief overviews of
+requests for products to be shipped to certain prohibited
+  requirements for the design and manufacture of DES equipment.
+  requirements for use of encryption with the International
+  requirements for using encryption at the Physical Layer of the
+requirements of FIPS PUB 140-1.  Until the NIST FIPS 140-1
+Responsibility for granting export licenses (except for those DES
+rounds instead of 16, then it could be broken on a personal
+"rounds" were needed to keep an analyst or adversary from working
+"rounds" with a good algorithm, there should be no correlation
+Section 2315).  However, NIST does plan to augment the DES with
+security;
+Security Provided by DES
+  security threats, implementation of the DES algorithm, and key
+  should be used, various encryption methods, the reduction of
+       similar data to prevent unauthorized access to computing
+simultaneously forward and backward and "meeting in the middle"
+       software, font or other information, and cannot be used for
+sound but would not be "if only this simple change was made."
+Specific Cryptographic Implementations under Jurisdiction of the
+  specified in this standard.
+       Springfield, VA 22161
+Subject to agency waivers as discussed below, use of DES is
+sufficient indication of conformance.
+system with resources commensurate to the value of the
+Technical Information Service, at:
+Technical Overview
+  Technology Building, Room B-154
+telecommunications and automated information systems operated by
+  telecommunications systems conveying digital information.  FIPS
+  Telegraph and Telephone Consultative Committee (CCITT), Group 3-
+       Telephone: (202) 377-0708
+       Telephone: (202) 875-6650
+       Telephone (301) 975-2920
+       Telephone (301) 975-2934
+       Telephone (703) 487-4650, FTS: 737-4650
+  testing process and satisfy four testing requirements of
+       text, except as directly related to password or PIN
+that a knowledgeable person might seek to comprise the security
+that converts plaintext to ciphertext using a key, a process
+the above categories should follow procedures set forth in the
+  -    the agency or department wishes to use Type I (i.e., for
+  -    the agency or department wishes to use Type II (i.e, for
+The Bureau of Export Administration, U.S. Department of Commerce
+the ciphertext depends on every bit of the data and every bit of
+  the Data Encryption Standard
+The Data Encryption Standard specifies a cryptographic algorithm
+the data key (56-bits) was challenged by several people as being
+The DES has been evaluated by several organizations and has been
+The DES uses 16 rounds for several reasons.  First, a minimum of
+The DES was developed to protect unclassified computer data in
+the following for a product classification determination:
+The head of a federal department or agency may waive the use of
+their discretion.
+the key (a 56-bit quantity for the DES).  After sufficient
+The keys used to protect electronic funds transfers must be able
+The most recent charge was that "if the DES has only 6 or 8
+The National Institute of Standards and Technology (NIST) of the
+The National Security Agency (NSA) of the U.S. Department of
+The Office of Munitions Control, U.S. Department of State issues
+       the operator which is not offset by Governmentwide savings.
+the procurement documentation and retained by the agency.
+The security provided by the DES depends on several factors:
+The two algorithms that were "broken on a personal computer" in
+  the two data authentication standards and introduces the basic
+the U.S. Government, its contractors, or agents, that contain
+This action will enable agencies to procure cost-effective
+This document addresses those frequently asked questions and
+  This document establishes the physical and logical security
+  This document specifies interoperability and security related
+  This guideline on DES discusses how and when data encryption
+  This special publication describes a Message Authentication Code
+  This special publication describes the design of four
+  This standard provides the technical specifications for the DES
+  This standard specifies a Data Authentication Algorithm, based
+  This standard specifies interoperability and security-related
+this subject may be obtained from FIPS 74, FIPS 140-1 (future),
+threat.
+to be changed and should be changed aperiodically, but at least
+to convert ciphertext back to plaintext, a process called
+to devices conforming to the DES standard.
+to federal export controls as specified in Title 22, Code of
+together; the others provided a margin of safety.  Second, the
+too short for high security applications.  Several people have
+Traffic in Arms Regulations (ITAR).  Specific information
+  type facsimile equipment.
+       unclassified applications) cryptographic devices certified
+unclassified information as used in this document excludes
+under either standard, please contact:
+  upon DES, which may be used to detect unauthorized
+U.S.C. section 3506(b).  Waivers shall be granted only when:
+       U.S. Department of Commerce
+       U.S. Department of Commerce
+       U.S. Department of State
+used for subsidiaries of U.S. corporations.
+  used in a wide variety of applications.  The modes specify how
+use of Type II products, the agency must document that such
+U.S. government users of NSA-endorsed products may obtain DES
+Validation of Devices for Compliance with FIPS PUBS 46 and 113
+Vendors of products in the above four categories should contact
+vendors with license procedures and further information as
+waiver determination is made after that notice is published, by
+Waiver Procedures
+Waivers for the Mandatory Use of DES
+waivers only by a written decision which explains the basis on
+Waivers to the mandatory use of DES are not required if:
+Waivers to the mandatory use of DES are required if:
+waiving the requirements of FIPS PUB 140 in order to buy
+       Washington, DC 20044
+       Washington, DC, 20250
+       weapon systems; or
+When the determination on a waiver applies to the procurement of
+which the agency head made the required finding(s).  A copy of
+will continue to support the use of DES in government security
+with a solution.
+written waiver request when they determine that conditions for
+X3.92-1981/R1987.  The DES has been reaffirmed twice, most
