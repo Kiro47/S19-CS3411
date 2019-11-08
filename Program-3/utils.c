@@ -12,23 +12,6 @@
 #include <stdarg.h>
 #include <string.h>
 
-/* These would normaly be part of their own Lib, but can't submit them */
-/* ------------------------------------------------------------------------ */
-/* FUNCTION  print :                                                        */
-/*     Checks if a spot in memory is free, if not free i                    */
-/* PARAMETER USAGE :                                                        */
-/*     allocation : Allocated memory to free                                */
-/* ------------------------------------------------------------------------ */
-char* checkFree(char *allocation)
-{
-    if (allocation != NULL)
-    {
-        free(allocation);
-        allocation = NULL;
-    }
-    return NULL;
-}
-
 /* ------------------------------------------------------------------------ */
 /* FUNCTION  print :                                                        */
 /*     Prints the given message and dynamically                             */
@@ -45,11 +28,16 @@ void print(char const *msg, ...)
 
     va_list args;
 
+    if (sizeRequired <= 0)
+    {
+        return;
+    }
+    tempBuffer = malloc(sizeof(char));
     /* Do nothing if empty */
     if ((buffer = malloc(sizeRequired + 1)) == NULL)
     {
-        buffer = checkFree(buffer);
-        tempBuffer = checkFree(tempBuffer);
+        free(buffer);
+        free(tempBuffer);
         return;
     }
 
@@ -63,8 +51,8 @@ void print(char const *msg, ...)
 
         if (sizeModifier < 0)
         {
-            buffer = checkFree(buffer);
-            tempBuffer = checkFree(tempBuffer);
+            free(buffer);
+            free(tempBuffer);
             return;
         }
         /* If that works, exit loop */
@@ -79,10 +67,15 @@ void print(char const *msg, ...)
         /* workings of this if statement, however it's been */
         /* tested extensively and taken as a modified example */
         /* from the man page */
+        // free before overwrite
+        free(tempBuffer);
+        // You are causing an issue with overfreeing.
+        // I will find you
+        // Stop running
         if ((tempBuffer = realloc(buffer, sizeRequired)) == NULL)
         {
-            buffer = checkFree(buffer);
-            tempBuffer = checkFree(tempBuffer);
+            free(buffer);
+            free(tempBuffer);
             return;
         }
         else
@@ -93,6 +86,6 @@ void print(char const *msg, ...)
     }
     /* write out, and clean up */
     write(1, buffer, strlen(buffer));
-    buffer = checkFree(buffer);
-    tempBuffer = checkFree(tempBuffer);
+    free(buffer);
+    free(tempBuffer);
 }
