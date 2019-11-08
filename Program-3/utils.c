@@ -12,6 +12,24 @@
 #include <stdarg.h>
 #include <string.h>
 
+
+/* These would normaly be part of their own Lib, but can't submit them */
+/* ------------------------------------------------------------------------ */
+/* FUNCTION  print :                                                        */
+/*     Checks if a spot in memory is free, if not free i                    */
+/* PARAMETER USAGE :                                                        */
+/*     allocation : Allocated memory to free                                */
+/* ------------------------------------------------------------------------ */
+char* checkFree(char *allocation)
+{
+    if (allocation != NULL)
+    {
+        free(allocation);
+        allocation = NULL;
+    }
+    return NULL;
+}
+
 /* ------------------------------------------------------------------------ */
 /* FUNCTION  print :                                                        */
 /*     Prints the given message and dynamically                             */
@@ -36,8 +54,8 @@ void print(char const *msg, ...)
     /* Do nothing if empty */
     if ((buffer = malloc(sizeRequired + 1)) == NULL)
     {
-        free(buffer);
-        free(tempBuffer);
+        checkFree(buffer);
+        checkFree(tempBuffer);
         return;
     }
 
@@ -51,8 +69,8 @@ void print(char const *msg, ...)
 
         if (sizeModifier < 0)
         {
-            free(buffer);
-            free(tempBuffer);
+            checkFree(buffer);
+            checkFree(tempBuffer);
             return;
         }
         /* If that works, exit loop */
@@ -74,8 +92,8 @@ void print(char const *msg, ...)
         // Stop running
         if ((tempBuffer = realloc(buffer, sizeRequired)) == NULL)
         {
-            free(buffer);
-            free(tempBuffer);
+            checkFree(buffer);
+            checkFree(tempBuffer);
             return;
         }
         else
@@ -86,6 +104,6 @@ void print(char const *msg, ...)
     }
     /* write out, and clean up */
     write(1, buffer, strlen(buffer));
-    free(buffer);
-    free(tempBuffer);
+    checkFree(buffer);
+    checkFree(tempBuffer);
 }

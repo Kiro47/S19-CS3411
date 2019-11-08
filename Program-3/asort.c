@@ -7,6 +7,8 @@
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
+#include <stdio.h>
+#include <libgen.h>
 
 #define returnStat(intValue) (intValue ? "fail" : "success")
 #define BINARY_PROG "/usr/bin/sort"
@@ -27,6 +29,15 @@ typedef struct
 void helpMsg(char *progName)
 {
     print("%s <file1> <file2> <file3> ... <filename>\n", progName);
+}
+
+void clearBuffer(char *buffer, int size)
+{
+    int i;
+    for (i = 0; i <= size; i++)
+    {
+        buffer[i] = 0;
+    }
 }
 
 /*
@@ -188,7 +199,7 @@ int main(int argc, char **argv)
             args[1] = argv[i];
             args[2] = BINARY_OPTS;
             strcpy(args[3], OUTPUT_DIR);
-            strcat(args[3], argv[i]);
+            strcat(args[3], basename(argv[i]));
             args[4] = NULL;
             execvp(BINARY_PROG,args);
             // Set return status if there's break in execvp
@@ -211,7 +222,6 @@ int main(int argc, char **argv)
         status = waitpid(pData[i].pid, &returnStatus, 0 );
         if (returnStatus == -1)
         {
-            print("180");
             // error with wait
             print("%s", strerror(errno));
             pData[i].returnStatus = errno;
@@ -242,10 +252,21 @@ int main(int argc, char **argv)
     {
         for (i =0; i < (argc-1); i++)
         {
-            print("%s : %s (%d)\n",
-                    argv[pData[i].fileName],
+            char *buffer;
+            int size = sizeof(basename(argv[pData[i].fileName])) +
+                sizeof(returnStat(pData[i].returnStatus)) +
+                sizeof(pData[i].returnStatus) +
+                9;
+            buffer = malloc(size);
+            sprintf(buffer, "%s : %s (%d)\n",
+                    basename(argv[pData[i].fileName]),
                     returnStat(pData[i].returnStatus),
                     pData[i].returnStatus);
+            buffer[size-1] = 0;
+            write(1, buffer, size);
+            clearBuffer(buffer, size);
+            free(buffer);
+
         }
         print("%d out of %d files successfully sorted!\n",
                 ((argc-1) - failedProcs), (argc-1));
