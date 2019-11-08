@@ -250,5 +250,10 @@ int main(int argc, char **argv)
 
 
     free(pData);
+    free(args[0]);
+    free(args[1]);
+    free(args[2]);
+    free(args[3]);
+    free(args[4]);
     return 0;
 }
