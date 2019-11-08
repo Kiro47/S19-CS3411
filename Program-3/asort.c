@@ -2,16 +2,20 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
 
-char *OUTPUT_DIR = "SORTED";
+#define returnStat(intValue) (intValue ? "fail" : "success")
+#define BINARY_PROG "/usr/bin/sort"
+#define BINARY_OPTS "-o"
+char *OUTPUT_DIR = "SORTED/";
 
 typedef struct
 {
-    int fileName; // Pointer to name of the file
+    int fileName; // argc value associated with
     int pid; // PID of the process running
     int returnStatus; // Status after execution
 } processData;
@@ -106,11 +110,15 @@ int checkIfAllFilesExist(int argc, char **argv)
 int main(int argc, char **argv)
 {
     int **childrenPIDs;
-    processData **pData;
     int i, j;
+    processData* pData;
     int childPID;
     int dirError;
     int returnStatus;
+    int failedProcs;
+    pid_t status;
+    char *args[4];
+    int largestStringLength;
     dirError = 0;
     returnStatus = 0;
 
@@ -120,11 +128,15 @@ int main(int argc, char **argv)
         return 0;
     }
 
-    if (checkIfAllFilesExist(argc, argv))
+    /*
+     * Annoyingly enough we're not supposed to handle this.
+    if (!checkIfAllFilesExist(argc, argv))
     {
         print("Error with files, bailing.\n");
         return -1;
     }
+    */
+
     // Check if dir exists, if not make it
     if (doesDirExist(OUTPUT_DIR) != 1)
     {
@@ -137,56 +149,103 @@ int main(int argc, char **argv)
         }
     }
 
+    largestStringLength = 0;
+    for (i = 0; i < argc; i++)
+    {
+        if (strlen(argv[i]) > largestStringLength)
+        {
+            largestStringLength = strlen(argv[i]);
+        }
+    }
+
+    // Set args memory allocations
+    args[0] = malloc(sizeof(BINARY_PROG));
+    args[1] = malloc(largestStringLength * sizeof(char));
+    args[2] = malloc(sizeof(BINARY_OPTS));
+    args[3] = malloc((strlen(OUTPUT_DIR) + largestStringLength) * sizeof(char));
+
     // Spawn processes
-    pData = malloc(sizeof (processData) * (argc - 1));
+    pData = malloc((argc-1) * sizeof(processData));
     returnStatus = 0;
     for (i = 1; i < argc; i++)
     {
         childPID = fork();
         if (childPID == 0)
         {
+            // Close pipes because we don't care about output
+//            close(1);
+//            close(2);
             // start sort
-
-            // Set return status
-            pData[i-1]->returnStatus = returnStatus;
+            args[0] = BINARY_PROG;
+            args[1] = argv[i];
+            args[2] = BINARY_OPTS;
+            args[3] = strcat(OUTPUT_DIR,argv[i]);
+            execvp(BINARY_PROG,args);
+            // Set return status if there's break in execvp
+            pData[i-1].returnStatus = errno;
+            return;
         }
         else
         {
             // Set child information
-            pData[i-1]->pid = childPID;
-            pData[i-1]->fileName = *argv[i];
+            pData[i-1].pid = childPID;
+            pData[i-1].fileName = i;
         }
     }
 
     // Await for all children
     for (i = 0; i < (argc - 1); i++)
     {
-        // Wait on any child
-        wait(NULL);
-    }
 
-    // Print report
-
-
-
-
-    // We start at 1 because of program name offset
-/*
- * old code, decided to it like on line 162 now
-    while(i != 1)
-    {
-        for (j = 0; j < (argc - 1); i++)
+        // Wait on child
+        status = waitpid(pData[i].pid, &returnStatus, 0 );
+        if (returnStatus == -1)
         {
-            // Check if active
-            if (childrenPIDs[j] != 0)
-            {
-                childPID = childrenPIDs[j];
-                waitpid(childPID, &returnStatus);
-            }
+            print("180");
+            // error with wait
+            print("%s", strerror(errno));
+            pData[i].returnStatus = errno;
+            continue;
+        }
+        if (WIFEXITED(status))
+        {
+            pData[i].returnStatus = WEXITSTATUS(returnStatus);
+        }
+        else
+        {
+            pData[i].returnStatus = WEXITSTATUS(returnStatus);
         }
     }
-*/
-    free(childrenPIDs);
-    print("test\n");
+
+
+    // Did anything fail?
+    failedProcs = 0;
+    for (i = 0; i < (argc-1); i++)
+    {
+        if (pData[i].returnStatus != 0)
+        {
+            failedProcs += 1;
+        }
+    }
+    // Print reports
+    if (failedProcs != 0)
+    {
+        for (i =0; i < (argc-1); i++)
+        {
+            print("%s : %s (%d)\n",
+                    argv[pData[i].fileName],
+                    returnStat(pData[i].returnStatus),
+                    pData[i].returnStatus);
+        }
+        print("%d out of %d files successfully sorted!\n",
+                ((argc-1) - failedProcs), (argc-1));
+    }
+    else
+    {
+        print("All files successfully sorted.\n");
+    }
+
+
+    free(pData);
     return 0;
 }
