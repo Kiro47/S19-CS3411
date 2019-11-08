@@ -201,8 +201,6 @@ int main(int argc, char **argv)
     }
     */
 
-    OUTPUT_DIR = malloc(strlen(OUTPUT_DIR_STRING) * sizeof(char));
-    strcpy(OUTPUT_DIR, OUTPUT_DIR_STRING);
     // Check if dir exists, if not make it
     if (doesDirExist(OUTPUT_DIR) != 1)
     {
