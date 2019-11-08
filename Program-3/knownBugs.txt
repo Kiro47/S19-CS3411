@@ -1,0 +1,10 @@
+Error when checking if a directory exists, and it does:
+
+==22996== Conditional jump or move depends on uninitialised value(s)
+==22996==    at 0x400DFB: doesDirExist (in /home/campus31/jchelm/git/S19-CS3411/Program-3/asort)
+==22996==    by 0x401083: main (in /home/campus31/jchelm/git/S19-CS3411/Program-3/asort)
+==22996==  Uninitialised value was created by a heap allocation
+==22996==    at 0x4C29E63: malloc (vg_replace_malloc.c:309)
+==22996==    by 0x400DD2: doesDirExist (in /home/campus31/jchelm/git/S19-CS3411/Program-3/asort)
+==22996==    by 0x401083: main (in /home/campus31/jchelm/git/S19-CS3411/Program-3/asort)
+
