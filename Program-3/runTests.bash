@@ -25,3 +25,34 @@ test3()
 
 # I cant of just started running these manually, I didn't have the energy
 # to script it right.
+
+# Nyyyyooooooooom
+single()
+{
+  for i in {1..5};
+  do
+    ./asort "TESTS/file${i}.txt"
+    sha256sum "TESTS/file${i}.sorted"
+    sha256sum "SORTED/file${i}.txt"
+  done
+}
+
+all()
+{
+  ./asort TESTS/file*.txt
+  for i in {1..5};
+  do
+    sha256sum "TESTS/file${i}.sorted"
+    sha256sum "SORTED/file${i}.txt"
+  done
+}
+
+echo "Singles"
+
+single
+
+echo "All"
+
+all
+
+# ZZZzzyyyyyyyoooooooom
