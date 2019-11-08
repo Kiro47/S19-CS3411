@@ -117,7 +117,7 @@ int main(int argc, char **argv)
     int returnStatus;
     int failedProcs;
     pid_t status;
-    char *args[4];
+    char *args[5];
     int largestStringLength;
     dirError = 0;
     returnStatus = 0;
@@ -162,8 +162,9 @@ int main(int argc, char **argv)
     args[0] = malloc(sizeof(BINARY_PROG));
     args[1] = malloc(largestStringLength * sizeof(char));
     args[2] = malloc(sizeof(BINARY_OPTS));
-    args[3] = malloc((strlen(OUTPUT_DIR) + largestStringLength) * sizeof(char));
-
+    args[3] = malloc((strlen(OUTPUT_DIR) + largestStringLength + 1)
+            * sizeof(char));
+    args[4] = malloc(sizeof(NULL));
     // Spawn processes
     pData = malloc((argc-1) * sizeof(processData));
     returnStatus = 0;
@@ -173,14 +174,16 @@ int main(int argc, char **argv)
         if (childPID == 0)
         {
             // Close pipes because we don't care about output
-//            close(1);
-//            close(2);
+            close(1);
+            close(2);
             // start sort
             args[0] = BINARY_PROG;
             args[1] = argv[i];
             args[2] = BINARY_OPTS;
-            args[3] = strcat(OUTPUT_DIR,argv[i]);
-            execvp(BINARY_PROG,args);
+            strcpy(args[3], OUTPUT_DIR);
+            strcat(args[3], argv[i]);
+            args[4] = NULL;
+            execvp("ls",args);
             // Set return status if there's break in execvp
             pData[i-1].returnStatus = errno;
             return;
