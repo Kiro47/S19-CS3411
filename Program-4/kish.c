@@ -66,12 +66,13 @@ char* input()
  *           characters arrays are allocated in memory and need to be freed
  *           when done with.
  */
-char **splitArgs(char *args, int *argAmt)
+char **splitArgs(char *args, int *argAmt, char delimiter)
 {
     int i;
     int argsLen = (int) strlen(args);
     char *currentArg;
     char *placedArg;
+    char *delimterArr;
     char **argArray;
 
     // Count the number of expected arg
@@ -98,7 +99,13 @@ char **splitArgs(char *args, int *argAmt)
         currentArg = malloc(sizeof(char) * argsLen);
         // Reset counter
         i = 0;
-        currentArg = strtok(args, " ");
+        // Build delimiter
+        // 1 char + null term
+        delimterArr = malloc(2 * sizeof(char));
+        delimterArr[0] = delimiter;
+        delimterArr[1] = 0;
+
+        currentArg = strtok(args, delimterArr);
         while(currentArg != NULL)
         {
             if (i > *argAmt)
@@ -108,10 +115,11 @@ char **splitArgs(char *args, int *argAmt)
             }
             argArray[i] = malloc(sizeof(char) * strlen(currentArg));
             strcpy(argArray[i++], currentArg);
-            currentArg = strtok(NULL, " ");
+            currentArg = strtok(NULL, delimterArr);
         }
     }
 
+    free(delimterArr);
     // Set null term
     argArray[*argAmt] = 0;
     /* TODO: REMOVE DEBUG: */
@@ -212,7 +220,9 @@ int spawnShell(char* processName, int statusCode)
 {
     int argsLen;
     int *argAmt;
+    int *argsAmtPipeSplit;
     char **argsList;
+    char **argsListPipeSplit;
     char *buffer;
     int i;
 
@@ -241,13 +251,18 @@ int spawnShell(char* processName, int statusCode)
     // Start parsing args
     argAmt = malloc(sizeof(int));
     argAmt[0] = 0;
-    argsList = splitArgs(args, argAmt);
+    argsList = splitArgs(args, argAmt, ' ');
 
     // TODO: Evaluate piping and redirects
+    argsAmtPipeSplit = malloc(sizeof(int));
+    argsAmtPipeSplit[0] = 0;
+    argsListPipeSplit = splitArgs(args, argsAmtPipeSplit, '|');
+
     // TODO: Evaluate builtins
     statusCode = runCommand(argsList);
     // Done with arrays, clean up
-    free(buffer);
+    // Cmd Arg Clean
+//    free(buffer);
     for( i = 0; i < *argAmt; i++)
     {
         // Free individual args
@@ -255,6 +270,18 @@ int spawnShell(char* processName, int statusCode)
     }
     // Free up arg array
     free(argsList);
+    free(argAmt);
+    // Pipe Split
+    for( i = 0; i < *argsAmtPipeSplit; i++)
+    {
+        // Free individual args
+        print("[%d] => {%s}\n", i, argsListPipeSplit[i]);
+        free(argsListPipeSplit[i]);
+    }
+    // Free up arg array
+    free(argsListPipeSplit);
+    free(argsAmtPipeSplit);
+    free(args);
     return statusCode;
 }
 
