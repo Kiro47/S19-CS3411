@@ -100,8 +100,6 @@ char **splitArgs(char *args, int *argAmt, char delimiter)
     }
     else
     {
-        // Overallocate for temp arg
-        currentArg = malloc(sizeof(char) * argsLen);
         // Reset counter
         i = 0;
         // Build delimiter
@@ -124,6 +122,7 @@ char **splitArgs(char *args, int *argAmt, char delimiter)
         }
     }
 
+    free(currentArg);
     free(delimterArr);
     // Set null term
     argArray[*argAmt] = 0;
@@ -255,15 +254,15 @@ int spawnShell(char* processName, int statusCode)
     /* END DEBUG */
 
     /* Do the command stuff */
-    // Start parsing args
-    argAmt = malloc(sizeof(int));
-    argAmt[0] = 0;
-    argsList = splitArgs(args, argAmt, ' ');
-
     // TODO: Evaluate piping and redirects
     argsAmtPipeSplit = malloc(sizeof(int));
     argsAmtPipeSplit[0] = 0;
     argsListPipeSplit = splitArgs(args, argsAmtPipeSplit, '|');
+
+    // Start parsing args
+    argAmt = malloc(sizeof(int));
+    argAmt[0] = 0;
+    argsList = splitArgs(args, argAmt, ' ');
 
     // TODO: Evaluate builtins
     statusCode = runCommand(argsList);
