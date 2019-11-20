@@ -70,15 +70,20 @@ char **splitArgs(char *args, int *argAmt, char delimiter)
 {
     int i;
     int argsLen = (int) strlen(args);
+    char *savedArgs;
     char *currentArg;
     char *placedArg;
     char *delimterArr;
     char **argArray;
 
+    // Save for unmodified return
+    savedArgs = malloc(argsLen);
+    strcpy(savedArgs, args);
+
     // Count the number of expected arg
     for (i = 0; i < argsLen; i++)
     {
-        if (args[i] == ' ')
+        if (args[i] == delimiter)
         {
             argAmt[0]++;
         }
@@ -129,6 +134,8 @@ char **splitArgs(char *args, int *argAmt, char delimiter)
         printf("arg[%d] = %s\n", i, argArray[i]);
     }
     */
+    strcpy(args, savedArgs);
+    free(savedArgs);
     return argArray;
 }
 
