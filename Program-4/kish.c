@@ -191,6 +191,7 @@ int runCommand(char** commandArgs, int fdStdin, int fdStdout, int fdStderr)
     int returnStatus;
     int exitStatus;
     pid_t childPID;
+    // TODO: Evaluate builtins
 
     childPID = fork();
     signal(SIGTTIN, genericHandler);
@@ -239,43 +240,7 @@ int runCommand(char** commandArgs, int fdStdin, int fdStdout, int fdStderr)
     }
 }
 
-void stripWhiteSpace(char *string)
-{
-    int index, i;
 
-    // Trim leading white spaces
-    index = 0;
-    while(string[index] == ' ' || string[index] == '\t' || string[index] == '\n')
-    {
-        index++;
-    }
-
-    // Left shift characters over whitespace
-    i = 0;
-    while(string[i + index] != '\0')
-    {
-        string[i] = string[i + index];
-        i++;
-    }
-    // Redefine null terminator
-    string[i] = '\0';
-
-    // Trim trailing white spaces
-    i = 0;
-    index = -1;
-    while(string[i] != '\0')
-    {
-        if(string[i] != ' ' && string[i] != '\t' && string[i] != '\n')
-        {
-            index = i;
-        }
-
-        i++;
-    }
-
-    /* Mark the next character to last non white space character as NULL */
-    string[index + 1] = '\0';
-}
 
 /*
  * spawnShell(char* processName, int statusCode)
@@ -320,7 +285,7 @@ int spawnShell(char* processName, int statusCode)
     // strip white space from pipe split
     for ( i = 0; i < *argsAmtPipeSplit; i++)
     {
-        stripWhiteSpace(argsListPipeSplit[i]);
+        trim(argsListPipeSplit[i]);
     }
 
     argAmt = malloc(sizeof(int));
@@ -352,7 +317,6 @@ int spawnShell(char* processName, int statusCode)
         }
         free(argAmt);
     }
-    // TODO: Evaluate builtins
 
     // Done with arrays, clean up
     // Cmd Arg Clean

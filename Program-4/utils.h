@@ -13,4 +13,6 @@ void print(char const *msg, ...);
 
 void getChar(int stdinFD, char* character);
 
+void trim(char *string);
+
 #endif

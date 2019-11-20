@@ -90,14 +90,50 @@ void print(char *fmt, ...)
 	free(buffer);
 }
 
+/*
+ * trim(char *string)
+ *      Strips leading and trailing whitespace from a string, modifies in place.
+ *      Whitespace is defined as ' ', tabs, or newlines
+ * args:
+ *      string: Character array to strip whitespace
+ */
+void trim(char *string)
+{
+    int index, i;
 
+    // Trim leading white spaces
+    index = 0;
+    while(string[index] == ' ' || string[index] == '\t' || string[index] == '\n')
+    {
+        index++;
+    }
 
+    // Left shift characters over whitespace
+    i = 0;
+    while(string[i + index] != '\0')
+    {
+        string[i] = string[i + index];
+        i++;
+    }
+    // Redefine null terminator
+    string[i] = '\0';
 
+    // Trim trailing white spaces
+    i = 0;
+    index = -1;
+    while(string[i] != '\0')
+    {
+        if(string[i] != ' ' && string[i] != '\t' && string[i] != '\n')
+        {
+            index = i;
+        }
 
+        i++;
+    }
 
-
-
-
+    // Reset null terminator
+    string[index + 1] = '\0';
+}
 
 void getChar(int stdinFD, char* character)
 {
