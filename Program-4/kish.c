@@ -1,6 +1,5 @@
 #include "utils.h"
 #include "signalHandlers.h"
-
 #include <stdlib.h>
 #include <string.h>
 #include <libgen.h>
@@ -172,6 +171,40 @@ void handleStandardFDOverwrites(int fdStdin, int fdStdout, int fdStderr)
     }
 }
 
+int evaluateBuiltins(char **commandArgs, int fdStdout)
+{
+    int i;
+    /*
+     * If else chains for builtin evals because doing a switch
+     * would require me to setup an enum interface, which not today.
+     */
+    if (fdStdout == -1)
+    {
+        fdStdout = 1;
+    }
+    if (strcmp(commandArgs[0], "exit") == 0)
+    {
+        // Bail quick
+        exit(0);
+    }
+    else if (strcmp(commandArgs[0], "cd") == 0)
+    {
+        // TODO: ... cd
+    }
+    else if (strcmp(commandArgs[0], "echo") == 0)
+    {
+        print("192: [%s][%d]\n", commandArgs[1], strlen(commandArgs[1]));
+
+        for (i = 1; commandArgs[i] != NULL; i++)
+        {
+            write(fdStdout, commandArgs[i], strlen(commandArgs[i]));
+            write(fdStdout, " ", sizeof(char));
+        }
+        write(fdStdout, "\n", sizeof(char));
+        return 1;
+    }
+}
+
 /*
  * runCommand(char** commandArgs)
  *      Forks a new process which runs the passed in command
@@ -190,8 +223,16 @@ int runCommand(char** commandArgs, int fdStdin, int fdStdout, int fdStderr)
 {
     int returnStatus;
     int exitStatus;
+    int builtin;
     pid_t childPID;
     // TODO: Evaluate builtins
+
+    // Found exit command
+    builtin = evaluateBuiltins(commandArgs, fdStdout);
+    if (builtin == 1)
+    {
+        return 0;
+    }
 
     childPID = fork();
     signal(SIGTTIN, genericHandler);
@@ -308,6 +349,14 @@ int spawnShell(char* processName, int statusCode)
         for ( i = 0; i < *argsAmtPipeSplit; i++)
         {
             argsList = splitArgs(argsListPipeSplit[i], argAmt, ' ');
+            /*
+             * So here we're going to make an assumption that only the first
+             * command needs to check for a redirect to stdin and only the last
+             * command will check for a redirect to stdout.  This is because
+             * logically all the other stdins and stdouts should be occupied
+             * via the pipes.
+             * EDIT: I was reaffirmed this by rereading the assignment
+             */
             runCommand(argsList, -1, -1, -1);
             for ( j = 0; j < *argAmt; j++)
             {
