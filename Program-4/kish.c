@@ -9,6 +9,9 @@
 #include <signal.h>
 
 char *CWD_TEMP = "/home/user";
+#define STDIN  0
+#define STDOUT 1
+#define STDERR 2
 
 /*
  * input()
@@ -150,6 +153,25 @@ static void genericHandler(int signum)
     return;
 }
 
+void handleStandardFDOverwrites(int fdStdin, int fdStdout, int fdStderr)
+{
+    if (fdStdin != -1)
+    {
+        close(STDIN);
+        dup(fdStdin);
+    }
+    if (fdStdout != -1)
+    {
+        close(STDOUT);
+        dup(fdStdout);
+    }
+    if (fdStderr != -1)
+    {
+        close(STDERR);
+        dup(fdStderr);
+    }
+}
+
 /*
  * runCommand(char** commandArgs)
  *      Forks a new process which runs the passed in command
@@ -157,11 +179,14 @@ static void genericHandler(int signum)
  *      commandArgs: An array of args used to run the command.
  *                   0 is executed to be the executable, and
  *                   the array is expected to be null terminated.
+ *      fdStdin:    FD to set standard input as, set as -1 to not change
+ *      fdStdout:   FD to set standard ouput as, set as -1 to not change
+ *      fdStderr:   FD to set standard error as, set as -1 to not change
  *  returns:
  *      int: Exit code of ran command
  *
  */
-int runCommand(char** commandArgs)
+int runCommand(char** commandArgs, int fdStdin, int fdStdout, int fdStderr)
 {
     int returnStatus;
     int exitStatus;
@@ -178,6 +203,8 @@ int runCommand(char** commandArgs)
     if (childPID == 0)
     {
         // Child thread
+        // Handle file descriptor specs
+        handleStandardFDOverwrites(fdStdin, fdStdout, fdStderr);
         errno = 0;
         execvp(commandArgs[0], commandArgs);
         // If we get here execvp has errored out
@@ -269,7 +296,7 @@ int spawnShell(char* processName, int statusCode)
     char **argsList;
     char **argsListPipeSplit;
     char *buffer;
-    int i;
+    int i, j;
     int tempPipes[2];
 
     // Prompt shell
@@ -302,24 +329,35 @@ int spawnShell(char* processName, int statusCode)
     {
         // No pipe, parse args
         argsList = splitArgs(args, argAmt, ' ');
-        statusCode = runCommand(argsList);
+        statusCode = runCommand(argsList, -1, -1, -1);
+        for ( j = 0; j < *argAmt; j++)
+        {
+            free(argsList[j]);
+        }
+        free(argsList);
+        free(argAmt);
     }
     else
     {
         // Parse args
         for ( i = 0; i < *argsAmtPipeSplit; i++)
         {
-            runCommand(splitArgs(argsListPipeSplit[i], argAmt, ' '));
+            argsList = splitArgs(argsListPipeSplit[i], argAmt, ' ');
+            runCommand(argsList, -1, -1, -1);
+            for ( j = 0; j < *argAmt; j++)
+            {
+                free(argsList[j]);
+            }
+            free(argsList);
         }
-        //
-        argsList = splitArgs(args, argAmt, ' ');
-
+        free(argAmt);
     }
     // TODO: Evaluate builtins
 
     // Done with arrays, clean up
     // Cmd Arg Clean
 //    free(buffer);
+    /*
     for( i = 0; i < *argAmt; i++)
     {
         // Free individual args
@@ -327,7 +365,9 @@ int spawnShell(char* processName, int statusCode)
     }
     // Free up arg array
     free(argsList);
+
     free(argAmt);
+    */
     // Pipe Split
     for( i = 0; i < *argsAmtPipeSplit; i++)
     {
