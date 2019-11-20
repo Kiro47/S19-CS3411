@@ -76,6 +76,7 @@ char **splitArgs(char *args, int *argAmt, char delimiter)
     char *delimterArr;
     char **argArray;
 
+    argAmt[0] = 0;
     // Save for unmodified return
     savedArgs = malloc(argsLen);
     strcpy(savedArgs, args);
@@ -211,6 +212,44 @@ int runCommand(char** commandArgs)
     }
 }
 
+void stripWhiteSpace(char *string)
+{
+    int index, i;
+
+    // Trim leading white spaces
+    index = 0;
+    while(string[index] == ' ' || string[index] == '\t' || string[index] == '\n')
+    {
+        index++;
+    }
+
+    // Left shift characters over whitespace
+    i = 0;
+    while(string[i + index] != '\0')
+    {
+        string[i] = string[i + index];
+        i++;
+    }
+    // Redefine null terminator
+    string[i] = '\0';
+
+    // Trim trailing white spaces
+    i = 0;
+    index = -1;
+    while(string[i] != '\0')
+    {
+        if(string[i] != ' ' && string[i] != '\t' && string[i] != '\n')
+        {
+            index = i;
+        }
+
+        i++;
+    }
+
+    /* Mark the next character to last non white space character as NULL */
+    string[index + 1] = '\0';
+}
+
 /*
  * spawnShell(char* processName, int statusCode)
  *      Spawns the interactive portion of the shell
@@ -231,6 +270,7 @@ int spawnShell(char* processName, int statusCode)
     char **argsListPipeSplit;
     char *buffer;
     int i;
+    int tempPipes[2];
 
     // Prompt shell
     // Format: "(lastProgramReturnCode) shell_name [currentDirectory] => "
@@ -244,28 +284,39 @@ int spawnShell(char* processName, int statusCode)
      */
     char *args = input();
 
-    /* TODO: REMOVE DEBUG */
-    /*
-    argsLen = strlen(args);
-    buffer = malloc(sizeof(char) * (argsLen + 10));
-    sprintf(buffer,"string[%s]\n",args);
-    write(0,buffer, argsLen + 10);
-    */
-    /* END DEBUG */
-
     /* Do the command stuff */
-    // TODO: Evaluate piping and redirects
+    // Eval pipes
     argsAmtPipeSplit = malloc(sizeof(int));
     argsAmtPipeSplit[0] = 0;
     argsListPipeSplit = splitArgs(args, argsAmtPipeSplit, '|');
 
-    // Start parsing args
-    argAmt = malloc(sizeof(int));
-    argAmt[0] = 0;
-    argsList = splitArgs(args, argAmt, ' ');
+    // strip white space from pipe split
+    for ( i = 0; i < *argsAmtPipeSplit; i++)
+    {
+        stripWhiteSpace(argsListPipeSplit[i]);
+    }
 
+    argAmt = malloc(sizeof(int));
+
+    if (*argsAmtPipeSplit == 1)
+    {
+        // No pipe, parse args
+        argsList = splitArgs(args, argAmt, ' ');
+        statusCode = runCommand(argsList);
+    }
+    else
+    {
+        // Parse args
+        for ( i = 0; i < *argsAmtPipeSplit; i++)
+        {
+            runCommand(splitArgs(argsListPipeSplit[i], argAmt, ' '));
+        }
+        //
+        argsList = splitArgs(args, argAmt, ' ');
+
+    }
     // TODO: Evaluate builtins
-    statusCode = runCommand(argsList);
+
     // Done with arrays, clean up
     // Cmd Arg Clean
 //    free(buffer);
