@@ -282,6 +282,122 @@ int runCommand(char** commandArgs, int fdStdin, int fdStdout, int fdStderr)
 }
 
 
+int parseReturnStatus(int childPID)
+{
+    int exitStatus;
+    int returnStatus;
+
+    waitpid(childPID, &returnStatus, 0);
+
+    if (WIFEXITED(returnStatus))
+    {
+        exitStatus = WEXITSTATUS(returnStatus);
+        if (exitStatus != 0)
+        {
+            print("[%d] %s\n", exitStatus, strerror(exitStatus));
+            if (exitStatus = 2)
+            {
+                // Defined expected behavior
+                // https://en.wikpedia.org/wiki/Exit_status
+                return 127;
+            }
+        }
+        else
+        {
+            // Guarenteed 0
+            return exitStatus;
+        }
+    }
+    else
+    {
+        // No idea what happened
+        return -1;
+    }
+}
+
+int runMultipleCommands(char** argsListPipeSplit, int* argsAmtPipeSplit)
+{
+    int i, j;
+    int returnStatus;
+    int existStatus;
+    int builtin;
+    pid_t childPID;
+    int **pipes;
+    char **commandArgs;
+    int *argAmt;
+
+    // Make pipes
+    pipes = malloc(sizeof(int) * (*argsAmtPipeSplit - 1));
+    for ( i = 0; i < (*argsAmtPipeSplit - 1); i++)
+    {
+        pipes[i] = malloc(sizeof(int) * 2);
+        if (pipe(pipes[i]) != 0)
+        {
+            write(2, strerror(errno), strlen(strerror(errno)));
+            return -1;
+        }
+    }
+
+    argAmt = malloc(sizeof(int));
+    // Parse into commands
+    for ( i = 0; i < *argsAmtPipeSplit; i++)
+    {
+        commandArgs = splitArgs(argsListPipeSplit[i], argAmt, ' ');
+
+        childPID = fork();
+
+        if (childPID == -1)
+        {
+            write(2, "Failed to fork new process.\n",sizeof(char) * 29 );
+            // TODO: print error
+            return -2;
+        }
+        if (childPID == 0)
+        {
+            if ( i == 0)
+            {
+                // Look for incoming
+                handleStandardFDOverwrites(-1,  pipes[i][1], -1);
+            }
+            else if ( i == (*argsAmtPipeSplit - 1))
+            {
+                // Look for outgoing
+                handleStandardFDOverwrites(pipes[i-1][0], -1 ,-1);
+            }
+            else
+            {
+                // Attach both to pipe
+                handleStandardFDOverwrites(pipes[i-1][0], pipes[i][1] ,-1);
+            }
+            errno = 0;
+            execvp(commandArgs[0], commandArgs);
+            // If we get here execvp error occured
+            exit(errno);
+        }
+        else
+        {
+            // We'll keep going as we only need to wait on the final proc
+            // Cleanup for next run
+            for ( j = 0; j < *argAmt; j++)
+            {
+                free(commandArgs[j]);
+            }
+            free(commandArgs);
+        }
+    }
+    // Free spares
+    free(argAmt);
+
+    for ( i = 0; i < (*argsAmtPipeSplit - 1); i++)
+    {
+        free(pipes[i]);
+    }
+    free(pipes);
+    // Wait on final PID
+    returnStatus = parseReturnStatus(returnStatus);
+
+    return returnStatus;
+}
 
 /*
  * spawnShell(char* processName, int statusCode)
@@ -299,11 +415,11 @@ int spawnShell(char* processName, int statusCode)
     int argsLen;
     int *argAmt;
     int *argsAmtPipeSplit;
+    int **pipes;
     char **argsList;
     char **argsListPipeSplit;
     char *buffer;
     int i, j;
-    int tempPipes[2];
 
     // Prompt shell
     // Format: "(lastProgramReturnCode) shell_name [currentDirectory] => "
@@ -329,10 +445,10 @@ int spawnShell(char* processName, int statusCode)
         trim(argsListPipeSplit[i]);
     }
 
-    argAmt = malloc(sizeof(int));
 
     if (*argsAmtPipeSplit == 1)
     {
+        argAmt = malloc(sizeof(int));
         // No pipe, parse args
         argsList = splitArgs(args, argAmt, ' ');
         statusCode = runCommand(argsList, -1, -1, -1);
@@ -345,42 +461,10 @@ int spawnShell(char* processName, int statusCode)
     }
     else
     {
-        // Parse args
-        for ( i = 0; i < *argsAmtPipeSplit; i++)
-        {
-            argsList = splitArgs(argsListPipeSplit[i], argAmt, ' ');
-            /*
-             * So here we're going to make an assumption that only the first
-             * command needs to check for a redirect to stdin and only the last
-             * command will check for a redirect to stdout.  This is because
-             * logically all the other stdins and stdouts should be occupied
-             * via the pipes.
-             * EDIT: I was reaffirmed this by rereading the assignment
-             */
-            runCommand(argsList, -1, -1, -1);
-            for ( j = 0; j < *argAmt; j++)
-            {
-                free(argsList[j]);
-            }
-            free(argsList);
-        }
-        free(argAmt);
+        statusCode = runMultipleCommands(argsListPipeSplit, argsAmtPipeSplit);
     }
 
     // Done with arrays, clean up
-    // Cmd Arg Clean
-//    free(buffer);
-    /*
-    for( i = 0; i < *argAmt; i++)
-    {
-        // Free individual args
-        free(argsList[i]);
-    }
-    // Free up arg array
-    free(argsList);
-
-    free(argAmt);
-    */
     // Pipe Split
     for( i = 0; i < *argsAmtPipeSplit; i++)
     {
