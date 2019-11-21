@@ -6,6 +6,9 @@
 #include <stdio.h>
 #include <errno.h>
 #include <signal.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 char *CWD_TEMP = "/home/user";
 #define STDIN  0
@@ -325,6 +328,8 @@ int runMultipleCommands(char** argsListPipeSplit, int* argsAmtPipeSplit)
     int **pipes;
     char **commandArgs;
     int *argAmt;
+    int fdInputRedir;
+    int fdOutputRedir;
 
     // Make pipes
     pipes = malloc(sizeof(int) * (*argsAmtPipeSplit - 1));
@@ -337,7 +342,6 @@ int runMultipleCommands(char** argsListPipeSplit, int* argsAmtPipeSplit)
             return -1;
         }
     }
-
     argAmt = malloc(sizeof(int));
     // Parse into commands
     for ( i = 0; i < *argsAmtPipeSplit; i++)
@@ -354,21 +358,64 @@ int runMultipleCommands(char** argsListPipeSplit, int* argsAmtPipeSplit)
         }
         if (childPID == 0)
         {
+            fdInputRedir = -1;
+            fdOutputRedir = -1;
             if ( i == 0)
             {
                 // Look for incoming
-                handleStandardFDOverwrites(-1,  pipes[i][1], -1);
+                // look for redirect in
+                for ( j = 0; j < *argAmt; j++)
+                {
+                    if (strcmp(commandArgs[j], "<") == 0)
+                    {
+                        if (commandArgs[j+1] == NULL)
+                        {
+                            write(2, "Invalid redirect\n", 18);
+                            return -2;
+                        }
+                        fdInputRedir = open(commandArgs[j+1], O_RDONLY);
+                        if (fdInputRedir == -1)
+                        {
+                            write(2, "Invalid redirect\n", 18);
+                            return -2;
+                        }
+                        // Overwrite value to null term before redir
+                        commandArgs[j] = 0;
+                    }
+                }
+                handleStandardFDOverwrites(fdInputRedir, pipes[i][1], -1);
             }
             else if ( i == (*argsAmtPipeSplit - 1))
             {
                 // Look for outgoing
-                handleStandardFDOverwrites(pipes[i-1][0], -1 ,-1);
+                for ( j = 0; j < *argAmt; j++)
+                {
+                    if (strcmp(commandArgs[j], ">") == 0)
+                    {
+                        if (commandArgs[j+1] == NULL)
+                        {
+                            write(2, "Invalid redirect\n", 18);
+                            return -2;
+                        }
+                        fdOutputRedir = open(commandArgs[j+1], O_CREAT | O_RDWR);
+                        if (fdOutputRedir == -1)
+                        {
+                            write(2, "Invalid redirect\n", 18);
+                            return -2;
+                        }
+                        // Overwrite value to null term before redir
+                        commandArgs[j] = 0;
+                    }
+                }
+                handleStandardFDOverwrites(pipes[i-1][0], fdOutputRedir ,-1);
             }
             else
             {
                 // Attach both to pipe
                 handleStandardFDOverwrites(pipes[i-1][0], pipes[i][1] ,-1);
             }
+            // There's no way to really control FDs after they move out of the
+            // process space, so we assume the exec'd program will close them.
             errno = 0;
             execvp(commandArgs[0], commandArgs);
             // If we get here execvp error occured
