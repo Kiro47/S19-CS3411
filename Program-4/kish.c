@@ -11,9 +11,13 @@
 #include <fcntl.h>
 
 char *CWD_TEMP = "/home/user";
+// Defined pipes
 #define STDIN  0
 #define STDOUT 1
 #define STDERR 2
+// Magic numbers
+// MAGICNUMBER: 20, seems like a sane default for your avg command
+#define DEFAULT_INPUT_LENGTH 2
 
 /*
  * input()
@@ -22,38 +26,43 @@ char *CWD_TEMP = "/home/user";
  * returns:
  *   char**:  The string that the user has entered
  */
-char* input()
+void input(char* string)
 {
-    char *string;
+   // char *string;
     char curChar;
     int current_size;
-    string = malloc(10);
-    current_size = 0;
 
+    //string = malloc(sizeof(char) * DEFAULT_INPUT_LENGTH);
+    current_size = DEFAULT_INPUT_LENGTH;
     if (string != NULL)
     {
         char c = 0;
         unsigned int i = 0;
-        while (read(0, &curChar, sizeof(char)) != 0)
+        while (read(STDIN, &curChar, sizeof(char)) != 0)
         {
+            if (i == current_size)
+            {
+                current_size = i + 1;
+                string = realloc(string, current_size);
+            }
             if (curChar == '\n')
             {
-                if (i == current_size)
-                {
-                    current_size = i + 10;
-                    string = realloc(string, current_size);
-                }
+
                 break;
             }
             string[i++] = curChar;
         }
         string[i] = 0;
     }
+    else
+    {
+        write(2, "Error allocating memory for input, exiting...\n", (sizeof(char) * 48 ));
+        exit(3);
+    }
     /* TODO: REMOVE DEBUG: */
-    /*
+
     printf("inp: [%s]\n", string);
-    */
-    return string;
+
 }
 
 /*
@@ -128,18 +137,16 @@ char **splitArgs(char *args, int *argAmt, char delimiter)
         }
     }
 
+    // Set null term
+    argArray[*argAmt] = malloc(sizeof(int));
+    argArray[*argAmt] = 0;
+
+    // Copy back ref
+    strcpy(args, savedArgs);
+
+    // Free things
     free(currentArg);
     free(delimterArr);
-    // Set null term
-    argArray[*argAmt] = 0;
-    /* TODO: REMOVE DEBUG: */
-    /*
-    for (i = 0; i < (*argAmt); i++)
-    {
-        printf("arg[%d] = %s\n", i, argArray[i]);
-    }
-    */
-    strcpy(args, savedArgs);
     free(savedArgs);
     return argArray;
 }
@@ -196,10 +203,14 @@ int evaluateBuiltins(char **commandArgs, int fdStdout)
     }
     else if (strcmp(commandArgs[0], "echo") == 0)
     {
-        print("192: [%s][%d]\n", commandArgs[1], strlen(commandArgs[1]));
+        printf("192: [%s][%d]\n", commandArgs[1], strlen(commandArgs[1]));
 
         for (i = 1; commandArgs[i] != NULL; i++)
         {
+            if (commandArgs[i] == NULL)
+            {
+                break;
+            }
             write(fdStdout, commandArgs[i], strlen(commandArgs[i]));
             write(fdStdout, " ", sizeof(char));
         }
@@ -228,7 +239,6 @@ int runCommand(char** commandArgs, int fdStdin, int fdStdout, int fdStderr)
     int exitStatus;
     int builtin;
     pid_t childPID;
-    // TODO: Evaluate builtins
 
     // Found exit command
     builtin = evaluateBuiltins(commandArgs, fdStdout);
@@ -466,6 +476,7 @@ int spawnShell(char* processName, int statusCode)
     char **argsList;
     char **argsListPipeSplit;
     char *buffer;
+    char *args;
     int i, j;
 
     // Prompt shell
@@ -478,8 +489,9 @@ int spawnShell(char* processName, int statusCode)
      * and returning a pointer to it, but I've been struggling
      * hard with dynamicly allocated memory segments recently
      */
-    char *args = input();
-
+    args = malloc(sizeof(char) * DEFAULT_INPUT_LENGTH);
+    input(args);
+    printf("{%s}\n", args);
     /* Do the command stuff */
     // Eval pipes
     argsAmtPipeSplit = malloc(sizeof(int));
@@ -499,7 +511,7 @@ int spawnShell(char* processName, int statusCode)
         // No pipe, parse args
         argsList = splitArgs(args, argAmt, ' ');
         statusCode = runCommand(argsList, -1, -1, -1);
-        for ( j = 0; j < *argAmt; j++)
+        for ( j = 0; j <= *argAmt; j++)
         {
             free(argsList[j]);
         }
@@ -513,16 +525,21 @@ int spawnShell(char* processName, int statusCode)
 
     // Done with arrays, clean up
     // Pipe Split
-    for( i = 0; i < *argsAmtPipeSplit; i++)
+    if (*argsAmtPipeSplit != 1)
     {
-        // Free individual args
-        print("[%d] => {%s}\n", i, argsListPipeSplit[i]);
-        free(argsListPipeSplit[i]);
+        for( i = 0; i < *argsAmtPipeSplit; i++)
+        {
+            // Free individual args
+            print("[%d] => {%s}\n", i, argsListPipeSplit[i]);
+            free(argsListPipeSplit[i]);
+        }
+        free(argsListPipeSplit);
     }
     // Free up arg array
-    free(argsListPipeSplit);
+
     free(argsAmtPipeSplit);
     free(args);
+    exit(0);
     return statusCode;
 }
 
