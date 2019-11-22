@@ -1,11 +1,13 @@
 #include "shell.h"
 #include "simpleshell.h"
+#include "utils.h"
 
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
 #include <signal.h>
+#include <limits.h>
 
 // PRIVATE FUNC
 /*
@@ -65,6 +67,11 @@ int runCommand(char** commandArgs, int fdStdin, int fdStdout, int fdStderr)
 
     // Found exit command
     builtin = evaluateBuiltins(commandArgs, fdStdout);
+    if (builtin == 2)
+    {
+        // exit call
+        return INT_MIN;
+    }
     if (builtin == 1)
     {
         return 0;

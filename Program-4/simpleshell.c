@@ -1,6 +1,8 @@
 #include "utils.h"
 #include "shell.h"
 
+#include <limits.h>
+
 int main(int argc, char **argv)
 {
     int shellCode;
@@ -11,7 +13,7 @@ int main(int argc, char **argv)
     while(1)
     {
         shellCode = spawnShell(argv[0], shellCode);
-        if (shellCode == 1)
+        if (shellCode == INT_MIN)
         {
             // Shell returned `exit`
             return 0;

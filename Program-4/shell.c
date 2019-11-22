@@ -75,6 +75,7 @@ void parseReturnStatus(int returnStatus, int *code)
  *      int:
  *          127: No dir found
  *          1: Every is fine
+ *          INT_MIN: Shell Exit
  */
 int evaluateBuiltins(char **commandArgs, int fdStdout)
 {
@@ -89,8 +90,8 @@ int evaluateBuiltins(char **commandArgs, int fdStdout)
     }
     if (strcmp(commandArgs[0], "exit") == 0)
     {
-        // Bail quick
-        exit(0);
+        // Bail
+        return 2;
     }
     else if (strcmp(commandArgs[0], "cd") == 0)
     {
