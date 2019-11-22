@@ -26,7 +26,7 @@ char *CWD_TEMP = "/home/user";
  * returns:
  *   char**:  The string that the user has entered
  */
-void input(char* string)
+char* input(char* string)
 {
    // char *string;
     char curChar;
@@ -42,8 +42,9 @@ void input(char* string)
         {
             if (i == current_size)
             {
-                current_size = i + 1;
+                current_size = current_size + sizeof(char);
                 string = realloc(string, current_size);
+                printf("47 [%u]\n", string);
             }
             if (curChar == '\n')
             {
@@ -59,10 +60,7 @@ void input(char* string)
         write(2, "Error allocating memory for input, exiting...\n", (sizeof(char) * 48 ));
         exit(3);
     }
-    /* TODO: REMOVE DEBUG: */
-
-    printf("inp: [%s]\n", string);
-
+    return string;
 }
 
 /*
@@ -110,7 +108,7 @@ char **splitArgs(char *args, int *argAmt, char delimiter)
     if (*argAmt == 1)
     {
         // Only one req
-        argArray[0] = malloc(sizeof(char) * strlen(args));
+        argArray[0] = malloc(sizeof(char) * (strlen(args)) + 1);
         strcpy(argArray[0], args);
     }
     else
@@ -138,8 +136,8 @@ char **splitArgs(char *args, int *argAmt, char delimiter)
     }
 
     // Set null term
-    argArray[*argAmt] = malloc(sizeof(int));
-    argArray[*argAmt] = 0;
+    argArray[i] = malloc(sizeof(int));
+    argArray[i] = 0;
 
     // Copy back ref
     strcpy(args, savedArgs);
@@ -203,8 +201,6 @@ int evaluateBuiltins(char **commandArgs, int fdStdout)
     }
     else if (strcmp(commandArgs[0], "echo") == 0)
     {
-        printf("192: [%s][%d]\n", commandArgs[1], strlen(commandArgs[1]));
-
         for (i = 1; commandArgs[i] != NULL; i++)
         {
             if (commandArgs[i] == NULL)
@@ -343,6 +339,8 @@ int runMultipleCommands(char** argsListPipeSplit, int* argsAmtPipeSplit)
 
     // Make pipes
     pipes = malloc(sizeof(int) * (*argsAmtPipeSplit - 1));
+    argAmt = malloc(sizeof(int));
+    argAmt[0] = 0;
     for ( i = 0; i < (*argsAmtPipeSplit - 1); i++)
     {
         pipes[i] = malloc(sizeof(int) * 2);
@@ -352,7 +350,6 @@ int runMultipleCommands(char** argsListPipeSplit, int* argsAmtPipeSplit)
             return -1;
         }
     }
-    argAmt = malloc(sizeof(int));
     // Parse into commands
     for ( i = 0; i < *argsAmtPipeSplit; i++)
     {
@@ -490,7 +487,7 @@ int spawnShell(char* processName, int statusCode)
      * hard with dynamicly allocated memory segments recently
      */
     args = malloc(sizeof(char) * DEFAULT_INPUT_LENGTH);
-    input(args);
+    args = input(args);
     printf("{%s}\n", args);
     /* Do the command stuff */
     // Eval pipes
@@ -511,7 +508,7 @@ int spawnShell(char* processName, int statusCode)
         // No pipe, parse args
         argsList = splitArgs(args, argAmt, ' ');
         statusCode = runCommand(argsList, -1, -1, -1);
-        for ( j = 0; j <= *argAmt; j++)
+        for ( j = 0; j < *argAmt; j++)
         {
             free(argsList[j]);
         }
@@ -527,7 +524,7 @@ int spawnShell(char* processName, int statusCode)
     // Pipe Split
     if (*argsAmtPipeSplit != 1)
     {
-        for( i = 0; i < *argsAmtPipeSplit; i++)
+        for( i = 0; i <= *argsAmtPipeSplit; i++)
         {
             // Free individual args
             print("[%d] => {%s}\n", i, argsListPipeSplit[i]);
