@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
+
 // Included for snprintf and vsnprintf
 // Explicitly asked about this.
 #include <stdio.h>
@@ -135,22 +136,13 @@ void trim(char *string)
     string[index + 1] = '\0';
 }
 
-void getChar(int stdinFD, char* character)
+void freeStringArray(char** stringArrayList, int* stringArraySize)
 {
-    int count;
-    count = read(stdinFD, &character, sizeof(char));
-
-    if (count > SSIZE_MAX)
+    int i;
+    for ( i = 0; i < (*stringArraySize + 1); i++)
     {
-        // Undefined behavior, bail hard.
-        print("Undefinable behavior occured getting character.\n");
-        return; // SCHAR_MIN from limits
+        free(stringArrayList[i]);
     }
-
-    if (count < 0)
-    {
-        // Get error stuff
-        print(strerror(errno));
-    }
-    print("%c\n", *character);
+    free(stringArrayList);
+    free(stringArraySize);
 }

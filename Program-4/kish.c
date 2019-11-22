@@ -9,6 +9,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <unistd.h>
 
 char *CWD_TEMP = "/home/user";
 // Defined pipes
@@ -18,6 +19,7 @@ char *CWD_TEMP = "/home/user";
 // Magic numbers
 // MAGICNUMBER: 20, seems like a sane default for your avg command
 #define DEFAULT_INPUT_LENGTH 2
+#define SHELL_FORMAT "[%d] %s (%s) => "
 
 /*
  * input()
@@ -453,6 +455,45 @@ int runMultipleCommands(char** argsListPipeSplit, int* argsAmtPipeSplit)
     return returnStatus;
 }
 
+
+char* getCWD(void)
+{
+    int size;
+    char* cwd;
+    size = DEFAULT_INPUT_LENGTH;
+    cwd = malloc(sizeof(char) * DEFAULT_INPUT_LENGTH);
+
+    while (getcwd(cwd, size) == NULL)
+    {
+        size += DEFAULT_INPUT_LENGTH;
+        cwd = realloc(cwd, size);
+    }
+}
+
+/*
+ * void printShellPrompt(int statusCode, char* processName)
+ *      Prints the shell prompt for user input
+ * args:
+ *  statusCode: Status code of previous command
+ *  processName: Process name of the program
+ */
+void printShellPrompt(int statusCode, char* processName)
+{
+    char *cwd;
+    char* buffer;
+    int allocation;
+
+    cwd = getCWD();
+    allocation = (strlen(cwd) + strlen(basename(processName))
+                + strlen(SHELL_FORMAT));
+
+    buffer = malloc((sizeof(char) * allocation) + sizeof(int));
+    sprintf(buffer, SHELL_FORMAT, statusCode, basename(processName), cwd);
+    write(STDIN, buffer, (sizeof(char) * allocation) + sizeof(int));
+    free(cwd);
+    free(buffer);
+}
+
 /*
  * spawnShell(char* processName, int statusCode)
  *      Spawns the interactive portion of the shell
@@ -477,18 +518,13 @@ int spawnShell(char* processName, int statusCode)
     int i, j;
 
     // Prompt shell
-    // Format: "(lastProgramReturnCode) shell_name [currentDirectory] => "
-    //print("(%d) %s [%s] => ", statusCode, basename(argv[0]), CWD);
-    print("(%d) %s => ", statusCode, basename(processName));
+    printShellPrompt(statusCode, processName);
 
-    // Get input
-    /* TODO: Should really be doing this inside the function
-     * and returning a pointer to it, but I've been struggling
-     * hard with dynamicly allocated memory segments recently
-     */
+
     args = malloc(sizeof(char) * DEFAULT_INPUT_LENGTH);
     args = input(args);
     printf("{%s}\n", args);
+
     /* Do the command stuff */
     // Eval pipes
     argsAmtPipeSplit = malloc(sizeof(int));
@@ -508,12 +544,7 @@ int spawnShell(char* processName, int statusCode)
         // No pipe, parse args
         argsList = splitArgs(args, argAmt, ' ');
         statusCode = runCommand(argsList, -1, -1, -1);
-        for ( j = 0; j < (*argAmt + 1); j++)
-        {
-            free(argsList[j]);
-        }
-        free(argsList);
-        free(argAmt);
+        freeStringArray(argsList, argAmt);
     }
     else
     {
@@ -522,19 +553,11 @@ int spawnShell(char* processName, int statusCode)
 
     // Done with arrays, clean up
     // Pipe Split
-    if (*argsAmtPipeSplit != 0)
-    {
-        for( i = 0; i < (*argsAmtPipeSplit + 1); i++)
-        {
-            // Free individual args
-            print("[%d] => {%s}\n", i, argsListPipeSplit[i]);
-            free(argsListPipeSplit[i]);
-        }
-        free(argsListPipeSplit);
-    }
-    // Free up arg array
+    (*argsAmtPipeSplit != 0) ?
+        freeStringArray(argsListPipeSplit, argsAmtPipeSplit)
+        : free(argsAmtPipeSplit);
 
-    free(argsAmtPipeSplit);
+    // Free up arg array
     free(args);
     exit(0);
     return statusCode;

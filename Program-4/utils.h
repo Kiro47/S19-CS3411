@@ -11,7 +11,7 @@
  */
 void print(char const *msg, ...);
 
-void getChar(int stdinFD, char* character);
+void freeStringArray(char** stringArrayList, int* stringArraySize);
 
 void trim(char *string);
 
