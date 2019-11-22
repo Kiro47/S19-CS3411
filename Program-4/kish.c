@@ -90,7 +90,7 @@ char **splitArgs(char *args, int *argAmt, char delimiter)
 
     argAmt[0] = 0;
     // Save for unmodified return
-    savedArgs = malloc(argsLen);
+    savedArgs = malloc(sizeof(char) * argsLen);
     strcpy(savedArgs, args);
 
     // Count the number of expected arg
@@ -136,8 +136,8 @@ char **splitArgs(char *args, int *argAmt, char delimiter)
     }
 
     // Set null term
-    argArray[i] = malloc(sizeof(int));
-    argArray[i] = 0;
+//    argArray[i] = malloc(sizeof(int));
+    argArray[*argAmt] = 0;
 
     // Copy back ref
     strcpy(args, savedArgs);
@@ -508,7 +508,7 @@ int spawnShell(char* processName, int statusCode)
         // No pipe, parse args
         argsList = splitArgs(args, argAmt, ' ');
         statusCode = runCommand(argsList, -1, -1, -1);
-        for ( j = 0; j < *argAmt; j++)
+        for ( j = 0; j < (*argAmt + 1); j++)
         {
             free(argsList[j]);
         }
@@ -522,9 +522,9 @@ int spawnShell(char* processName, int statusCode)
 
     // Done with arrays, clean up
     // Pipe Split
-    if (*argsAmtPipeSplit != 1)
+    if (*argsAmtPipeSplit != 0)
     {
-        for( i = 0; i <= *argsAmtPipeSplit; i++)
+        for( i = 0; i < (*argsAmtPipeSplit + 1); i++)
         {
             // Free individual args
             print("[%d] => {%s}\n", i, argsListPipeSplit[i]);
