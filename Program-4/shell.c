@@ -20,7 +20,6 @@
  */
 void genericHandler(int signum)
 {
-    print("Sign: [%d]\n", signum);
     return;
 }
 
@@ -206,7 +205,6 @@ int spawnShell(char* processName, int statusCode)
 
     args = malloc(sizeof(char) * DEFAULT_INPUT_LENGTH);
     args = input(args);
-    printf("{%s}\n", args);
 
     /* Do the command stuff */
     // Eval pipes
