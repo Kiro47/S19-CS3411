@@ -46,7 +46,6 @@ char* input(char* string)
             {
                 current_size = current_size + sizeof(char);
                 string = realloc(string, current_size);
-                printf("47 [%u]\n", string);
             }
             if (curChar == '\n')
             {
@@ -59,7 +58,7 @@ char* input(char* string)
     }
     else
     {
-        write(2, "Error allocating memory for input, exiting...\n", (sizeof(char) * 48 ));
+        write(STDERR, "Error allocating memory for input, exiting...\n", (sizeof(char) * 48 ));
         exit(3);
     }
     return string;
@@ -80,25 +79,27 @@ char* input(char* string)
  *           characters arrays are allocated in memory and need to be freed
  *           when done with.
  */
-char **splitArgs(char *args, int *argAmt, char delimiter)
+char **splitArgs(char *args, int *argAmt, char *delimiter)
 {
     int i;
-    int argsLen = (int) strlen(args);
+    int argsLen;
     char *savedArgs;
     char *currentArg;
     char *placedArg;
-    char *delimterArr;
     char **argArray;
 
+    argsLen = (int) strlen(args);
     argAmt[0] = 0;
     // Save for unmodified return
-    savedArgs = malloc(sizeof(char) * argsLen);
+    savedArgs = malloc(sizeof(char) * (argsLen + 1));
     strcpy(savedArgs, args);
 
     // Count the number of expected arg
     for (i = 0; i < argsLen; i++)
     {
-        if (args[i] == delimiter)
+        // We only ever use one delimiter, if we used multiple
+        // we'd need to cycle over them here.
+        if (args[i] == delimiter[0])
         {
             argAmt[0]++;
         }
@@ -119,11 +120,8 @@ char **splitArgs(char *args, int *argAmt, char delimiter)
         i = 0;
         // Build delimiter
         // 1 char + null term
-        delimterArr = malloc(2 * sizeof(char));
-        delimterArr[0] = delimiter;
-        delimterArr[1] = 0;
 
-        currentArg = strtok(args, delimterArr);
+        currentArg = strtok(args, delimiter);
         while(currentArg != NULL)
         {
             if (i > *argAmt)
@@ -131,10 +129,11 @@ char **splitArgs(char *args, int *argAmt, char delimiter)
                 print("Error splitting args, {i = %d} {argAmt = %d}\n", i, *argAmt);
                 break;
             }
-            argArray[i] = malloc(sizeof(char) * strlen(currentArg));
+            argArray[i] = malloc(sizeof(char) * (strlen(currentArg) + 1));
             strcpy(argArray[i++], currentArg);
-            currentArg = strtok(NULL, delimterArr);
+            currentArg = strtok(NULL, delimiter);
         }
+        free(currentArg);
     }
 
     // Set null term
@@ -145,8 +144,6 @@ char **splitArgs(char *args, int *argAmt, char delimiter)
     strcpy(args, savedArgs);
 
     // Free things
-    free(currentArg);
-    free(delimterArr);
     free(savedArgs);
     return argArray;
 }
@@ -168,16 +165,19 @@ void handleStandardFDOverwrites(int fdStdin, int fdStdout, int fdStderr)
     {
         close(STDIN);
         dup(fdStdin);
+//        close(fdStdin);
     }
     if (fdStdout != -1)
     {
         close(STDOUT);
         dup(fdStdout);
+//        close(fdStdout);
     }
     if (fdStderr != -1)
     {
         close(STDERR);
         dup(fdStderr);
+//        close(fdStderr);
     }
 }
 
@@ -200,6 +200,26 @@ int evaluateBuiltins(char **commandArgs, int fdStdout)
     else if (strcmp(commandArgs[0], "cd") == 0)
     {
         // TODO: ... cd
+        if (commandArgs[1] != NULL)
+        {
+            if (chdir(commandArgs[1]) == -1)
+            {
+                write(STDERR, strerror(errno), strlen(strerror(errno)));
+                write(STDERR, "\n", sizeof(char));
+                return 127;
+            }
+            return 1;
+        }
+        else
+        {
+            if (chdir(getenv("HOME")) == -1)
+            {
+                write(STDERR, strerror(errno), strlen(strerror(errno)));
+                write(STDERR, "\n", sizeof(char));
+                return 127;
+            }
+            return 1;
+        }
     }
     else if (strcmp(commandArgs[0], "echo") == 0)
     {
@@ -273,7 +293,8 @@ int runCommand(char** commandArgs, int fdStdin, int fdStdout, int fdStderr)
             exitStatus = WEXITSTATUS(returnStatus);
             if (exitStatus != 0)
             {
-                print("[%d] %s\n", exitStatus,strerror(exitStatus));
+                write(STDERR, strerror(exitStatus), strlen(strerror(exitStatus)));
+                write(STDERR, "\n", sizeof(char));
                 if (exitStatus = 2)
                 {
                     // Defined expected behavior
@@ -293,7 +314,7 @@ int runCommand(char** commandArgs, int fdStdin, int fdStdout, int fdStderr)
 }
 
 
-int parseReturnStatus(int childPID)
+void parseReturnStatus(pid_t childPID, int *code)
 {
     int exitStatus;
     int returnStatus;
@@ -305,154 +326,104 @@ int parseReturnStatus(int childPID)
         exitStatus = WEXITSTATUS(returnStatus);
         if (exitStatus != 0)
         {
-            print("[%d] %s\n", exitStatus, strerror(exitStatus));
+            write(STDERR, strerror(exitStatus), strlen(strerror(exitStatus)));
+            write(STDERR, "\n", sizeof(char));
             if (exitStatus = 2)
             {
                 // Defined expected behavior
                 // https://en.wikpedia.org/wiki/Exit_status
-                return 127;
+                code[0] = 127;
             }
+            code[0] = exitStatus;
         }
         else
         {
             // Guarenteed 0
-            return exitStatus;
+            code[0] = exitStatus;
         }
     }
     else
     {
         // No idea what happened
-        return -1;
+        code[0] = -1;
     }
 }
 
 int runMultipleCommands(char** argsListPipeSplit, int* argsAmtPipeSplit)
 {
     int i, j;
-    int returnStatus;
+    int *returnStatus;
     int existStatus;
     int builtin;
-    pid_t childPID;
-    int **pipes;
+    int childPID;
+    int *apipe;
     char **commandArgs;
     int *argAmt;
     int fdInputRedir;
     int fdOutputRedir;
+    int exitCode;
+    int isParent;
 
-    // Make pipes
-    pipes = malloc(sizeof(int) * (*argsAmtPipeSplit - 1));
+    int fd;
+    int lastChild;
+    // Make childPID array
+//    childPID = malloc(sizeof(int));
+    apipe = malloc(sizeof(int) * 2);
     argAmt = malloc(sizeof(int));
-    argAmt[0] = 0;
-    for ( i = 0; i < (*argsAmtPipeSplit - 1); i++)
-    {
-        pipes[i] = malloc(sizeof(int) * 2);
-        if (pipe(pipes[i]) != 0)
-        {
-            write(2, strerror(errno), strlen(strerror(errno)));
-            return -1;
-        }
-    }
+    int saveStdout;
+    saveStdout = dup(STDOUT);
     // Parse into commands
-    for ( i = 0; i < *argsAmtPipeSplit; i++)
+    for ( i = (*argsAmtPipeSplit - 1); i >= 0; i--)
     {
-        commandArgs = splitArgs(argsListPipeSplit[i], argAmt, ' ');
+        argAmt[0] = 0;
 
-        childPID = fork();
+        // Doing this otherwise valgrind complains about stack allocation
+        commandArgs = splitArgs(argsListPipeSplit[i], argAmt, " ");
 
-        if (childPID == -1)
-        {
-            write(2, "Failed to fork new process.\n",sizeof(char) * 29 );
-            // TODO: print error
-            return -2;
+        pipe(apipe);
+        isParent = fork();
+
+        if (!isParent) {  // execute the sub-programs
+            close(apipe[1]); // close write end of pipe for children
+                close(0); // close stdin for all 3 processes
+            if(i != 0) {
+                dup(apipe[0]);
+            } // if not sort, clone pipe read end into stdin
+            if(i == 0) {
+                fd = open("filecomm1.txt", O_RDONLY);
+                dup(fd); // clone fd of filecomm1.c to stdin for sort
+            }
+            close(apipe[0]); // close extra read end of pipe
+
+            execvp(commandArgs[0],commandArgs);
+            exit(1);
         }
-        if (childPID == 0)
-        {
-            fdInputRedir = -1;
-            fdOutputRedir = -1;
-            if ( i == 0)
-            {
-                // Look for incoming
-                // look for redirect in
-                for ( j = 0; j < *argAmt; j++)
-                {
-                    if (strcmp(commandArgs[j], "<") == 0)
-                    {
-                        if (commandArgs[j+1] == NULL)
-                        {
-                            write(2, "Invalid redirect\n", 18);
-                            return -2;
-                        }
-                        fdInputRedir = open(commandArgs[j+1], O_RDONLY);
-                        if (fdInputRedir == -1)
-                        {
-                            write(2, "Invalid redirect\n", 18);
-                            return -2;
-                        }
-                        // Overwrite value to null term before redir
-                        commandArgs[j] = 0;
-                    }
-                }
-                handleStandardFDOverwrites(fdInputRedir, pipes[i][1], -1);
+        else {
+            if(i == (*argsAmtPipeSplit - 1)) lastChild = isParent; // save last child's pid
+            close(apipe[0]); // close read end of pipe for parent
+            close(1); // close stdout
+            if(i!=0) { dup(apipe[1]); } // if not sort, duplicate pipe write end into stdout
+            close(apipe[1]); // close extra pipe end
+            if(i==0){
+                dup2(saveStdout, 1); // if in shell, restore stdout to terminal
+                waitpid(lastChild,NULL,0);
             }
-            else if ( i == (*argsAmtPipeSplit - 1))
-            {
-                // Look for outgoing
-                for ( j = 0; j < *argAmt; j++)
-                {
-                    if (strcmp(commandArgs[j], ">") == 0)
-                    {
-                        if (commandArgs[j+1] == NULL)
-                        {
-                            write(2, "Invalid redirect\n", 18);
-                            return -2;
-                        }
-                        fdOutputRedir = open(commandArgs[j+1], O_CREAT | O_RDWR);
-                        if (fdOutputRedir == -1)
-                        {
-                            write(2, "Invalid redirect\n", 18);
-                            return -2;
-                        }
-                        // Overwrite value to null term before redir
-                        commandArgs[j] = 0;
-                    }
-                }
-                handleStandardFDOverwrites(pipes[i-1][0], fdOutputRedir ,-1);
-            }
-            else
-            {
-                // Attach both to pipe
-                handleStandardFDOverwrites(pipes[i-1][0], pipes[i][1] ,-1);
-            }
-            // There's no way to really control FDs after they move out of the
-            // process space, so we assume the exec'd program will close them.
-            errno = 0;
-            execvp(commandArgs[0], commandArgs);
-            // If we get here execvp error occured
-            exit(errno);
         }
-        else
-        {
-            // We'll keep going as we only need to wait on the final proc
-            // Cleanup for next run
-            for ( j = 0; j < *argAmt; j++)
-            {
-                free(commandArgs[j]);
-            }
-            free(commandArgs);
-        }
+
     }
     // Free spares
     free(argAmt);
+    printf("Parent ID: [%d]\n", getpid());
+    // Wait on PIDs
+    returnStatus = malloc(sizeof(int));
+    // Only get final
 
-    for ( i = 0; i < (*argsAmtPipeSplit - 1); i++)
-    {
-        free(pipes[i]);
-    }
-    free(pipes);
-    // Wait on final PID
-    returnStatus = parseReturnStatus(returnStatus);
+//    exitCode = *returnStatus;
+    exitCode = 0;
+    free(returnStatus);
 
-    return returnStatus;
+    free(apipe);
+    return exitCode;
 }
 
 
@@ -482,14 +453,20 @@ void printShellPrompt(int statusCode, char* processName)
     char *cwd;
     char* buffer;
     int allocation;
+    int i;
 
     cwd = getCWD();
     allocation = (strlen(cwd) + strlen(basename(processName))
-                + strlen(SHELL_FORMAT));
+                + strlen(SHELL_FORMAT) + 1);
 
     buffer = malloc((sizeof(char) * allocation) + sizeof(int));
+    for (i = 0; i < (allocation + 4); i++)
+    {
+        buffer[i] = 0;
+    }
     sprintf(buffer, SHELL_FORMAT, statusCode, basename(processName), cwd);
-    write(STDIN, buffer, (sizeof(char) * allocation) + sizeof(int));
+    buffer[allocation-1] = 0;
+    write(STDOUT, buffer, (sizeof(char) * allocation) + sizeof(int));
     free(cwd);
     free(buffer);
 }
@@ -529,7 +506,7 @@ int spawnShell(char* processName, int statusCode)
     // Eval pipes
     argsAmtPipeSplit = malloc(sizeof(int));
     argsAmtPipeSplit[0] = 0;
-    argsListPipeSplit = splitArgs(args, argsAmtPipeSplit, '|');
+    argsListPipeSplit = splitArgs(args, argsAmtPipeSplit, "|");
 
     // strip white space from pipe split
     for ( i = 0; i < *argsAmtPipeSplit; i++)
@@ -542,7 +519,7 @@ int spawnShell(char* processName, int statusCode)
     {
         argAmt = malloc(sizeof(int));
         // No pipe, parse args
-        argsList = splitArgs(args, argAmt, ' ');
+        argsList = splitArgs(args, argAmt, " ");
         statusCode = runCommand(argsList, -1, -1, -1);
         freeStringArray(argsList, argAmt);
     }
@@ -559,7 +536,7 @@ int spawnShell(char* processName, int statusCode)
 
     // Free up arg array
     free(args);
-    exit(0);
+//    exit(0);
     return statusCode;
 }
 
