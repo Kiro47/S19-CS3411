@@ -1,6 +1,6 @@
 ### Might need customized
 # Final executable/program name
-EXECUTABLE_NAME ?= kish
+EXECUTABLE_NAME ?= simpleshell
 # Compiler
 CC ?= gcc
 # C/CPP standard flag
