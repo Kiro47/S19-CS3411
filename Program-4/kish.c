@@ -237,6 +237,39 @@ int evaluateBuiltins(char **commandArgs, int fdStdout)
     }
 }
 
+void parseReturnStatus(int returnStatus, int *code)
+{
+    int exitStatus;
+
+
+    if (WIFEXITED(returnStatus))
+    {
+        exitStatus = WEXITSTATUS(returnStatus);
+        if (exitStatus != 0)
+        {
+            write(STDERR, strerror(exitStatus), strlen(strerror(exitStatus)));
+            write(STDERR, "\n", sizeof(char));
+            if (exitStatus = 2)
+            {
+                // Defined expected behavior
+                // https://en.wikpedia.org/wiki/Exit_status
+                code[0] = 127;
+            }
+            code[0] = exitStatus;
+        }
+        else
+        {
+            // Guarenteed 0
+            code[0] = exitStatus;
+        }
+    }
+    else
+    {
+        // No idea what happened
+        code[0] = -1;
+    }
+}
+
 /*
  * runCommand(char** commandArgs)
  *      Forks a new process which runs the passed in command
@@ -256,6 +289,8 @@ int runCommand(char** commandArgs, int fdStdin, int fdStdout, int fdStderr)
     int returnStatus;
     int exitStatus;
     int builtin;
+    int *code;
+    int returnCode;
     pid_t childPID;
 
     // Found exit command
@@ -288,139 +323,181 @@ int runCommand(char** commandArgs, int fdStdin, int fdStdout, int fdStderr)
         exitStatus = 0;
         // Parent thread
         wait(&returnStatus);
-        if (WIFEXITED(returnStatus))
-        {
-            exitStatus = WEXITSTATUS(returnStatus);
-            if (exitStatus != 0)
-            {
-                write(STDERR, strerror(exitStatus), strlen(strerror(exitStatus)));
-                write(STDERR, "\n", sizeof(char));
-                if (exitStatus = 2)
-                {
-                    // Defined expected behavior
-                    // https://en.wikipedia.org/wiki/Exit_status
-                    return 127;
-                }
-
-                return exitStatus;
-            }
-            else
-            {
-                // Guarenteed 0
-                return exitStatus;
-            }
-        }
+        code = malloc(sizeof(int));
+        parseReturnStatus(returnStatus, code);
+        returnCode = *code;
+        free(code);
+        return returnCode;
     }
 }
 
 
-void parseReturnStatus(pid_t childPID, int *code)
+
+
+/*
+ * childRunner(int* apipe, int i, int savedStdin, int saveStdout)
+ *  Runs a child process for runMultipleCommands
+ *
+ *  Args:
+ *      apipe: The pipes for children to use on pass
+ *
+ */
+int childRunner(char ** argsListPipeSplit, int* apipe, int i)
 {
-    int exitStatus;
-    int returnStatus;
+    int fdOutputRedir;
+    int fdInputRedir;
+    int j;
+    int *argAmt;
+    int builtin;
+    char **commandArgs;
 
-    waitpid(childPID, &returnStatus, 0);
+    argAmt = malloc(sizeof(int));
+    argAmt[0] = 0;
+    // Doing this otherwise valgrind complains about stack allocation
+    commandArgs = splitArgs(argsListPipeSplit[i], argAmt, " ");
 
-    if (WIFEXITED(returnStatus))
+    builtin = evaluateBuiltins(commandArgs, STDOUT);
+    if (builtin == 1)
     {
-        exitStatus = WEXITSTATUS(returnStatus);
-        if (exitStatus != 0)
+        freeStringArray(commandArgs, argAmt);
+        return 0;
+    }
+
+    close(apipe[1]); // close write end of pipe for children
+    if ( i == (*argAmt - 1))
+    {
+        // Look for outgoing redir
+        for ( j = 0; j < *argAmt; j++)
         {
-            write(STDERR, strerror(exitStatus), strlen(strerror(exitStatus)));
-            write(STDERR, "\n", sizeof(char));
-            if (exitStatus = 2)
+            if (strcmp(commandArgs[j], ">") == 0)
             {
-                // Defined expected behavior
-                // https://en.wikpedia.org/wiki/Exit_status
-                code[0] = 127;
+                if (commandArgs[j+1] == NULL)
+                {
+                    write(STDERR, "Invalid Redirect\n", sizeof(char) * 18);
+                    return -2;
+                }
+                fdOutputRedir = open(commandArgs[j+1],
+                        O_CREAT|O_RDWR|O_CLOEXEC, 0644);
+                if (fdOutputRedir == -1)
+                {
+                    write(STDERR, "Invalid redirect\n", sizeof(char) * 18);
+                    write(STDERR, strerror(errno),
+                            sizeof(char) * strlen(strerror(errno)));
+                    return -2;
+                }
+                // Dup
+                close(STDOUT);
+                dup(fdOutputRedir);
+                // Strip from command Args
+                commandArgs[j] = 0;
+                commandArgs[j + 1] = 0;
+                break;
             }
-            code[0] = exitStatus;
-        }
-        else
-        {
-            // Guarenteed 0
-            code[0] = exitStatus;
         }
     }
-    else
+    if ( i != 0)
     {
-        // No idea what happened
-        code[0] = -1;
+        close(STDIN);
+        dup(apipe[0]);
+    } // if not sort, clone pipe read end into stdin
+    if ( i == 0)
+    {
+        // Look for outgoing redir
+        for ( j = 0; j < *argAmt; j++)
+        {
+            if (strcmp(commandArgs[j], "<") == 0)
+            {
+                if (commandArgs[j+1] == NULL)
+                {
+                    write(STDERR, "Invalid Redirect\n", sizeof(char) * 18);
+                    return -2;
+                }
+                fdInputRedir = open(commandArgs[j+1],
+                        O_RDONLY|O_CLOEXEC, 0444);
+                if (fdInputRedir == -1)
+                {
+                    write(STDERR, "Invalid redirect\n", sizeof(char) * 18);
+                    write(STDERR, strerror(errno),
+                            sizeof(char) * strlen(strerror(errno)));
+                    return -2;
+                }
+                // Dup
+                close(STDIN);
+                dup(fdInputRedir);
+                // Strip from command Args
+                commandArgs[j] = 0;
+                commandArgs[j + 1] = 0;
+                break;
+            }
+        }
     }
+    close(apipe[0]); // close extra read end of pipe
+    free(argAmt);
+    execvp(commandArgs[0],commandArgs);
+    exit(1);
 }
+
 
 int runMultipleCommands(char** argsListPipeSplit, int* argsAmtPipeSplit)
 {
-    int i, j;
-    int *returnStatus;
-    int existStatus;
-    int builtin;
-    int childPID;
+    int i;
+    int returnStatus;
     int *apipe;
-    char **commandArgs;
-    int *argAmt;
-    int fdInputRedir;
-    int fdOutputRedir;
     int exitCode;
+    int *code;
     int isParent;
-
-    int fd;
+    int childReturn;
     int lastChild;
-    // Make childPID array
-//    childPID = malloc(sizeof(int));
-    apipe = malloc(sizeof(int) * 2);
-    argAmt = malloc(sizeof(int));
     int saveStdout;
     saveStdout = dup(STDOUT);
-    // Parse into commands
+    apipe = malloc(sizeof(int) * 2);
+    // Reverse build command chain
     for ( i = (*argsAmtPipeSplit - 1); i >= 0; i--)
     {
-        argAmt[0] = 0;
-
-        // Doing this otherwise valgrind complains about stack allocation
-        commandArgs = splitArgs(argsListPipeSplit[i], argAmt, " ");
-
         pipe(apipe);
         isParent = fork();
 
-        if (!isParent) {  // execute the sub-programs
-            close(apipe[1]); // close write end of pipe for children
-                close(0); // close stdin for all 3 processes
-            if(i != 0) {
-                dup(apipe[0]);
-            } // if not sort, clone pipe read end into stdin
-            if(i == 0) {
-                fd = open("filecomm1.txt", O_RDONLY);
-                dup(fd); // clone fd of filecomm1.c to stdin for sort
-            }
-            close(apipe[0]); // close extra read end of pipe
-
-            execvp(commandArgs[0],commandArgs);
-            exit(1);
-        }
-        else {
-            if(i == (*argsAmtPipeSplit - 1)) lastChild = isParent; // save last child's pid
-            close(apipe[0]); // close read end of pipe for parent
-            close(1); // close stdout
-            if(i!=0) { dup(apipe[1]); } // if not sort, duplicate pipe write end into stdout
-            close(apipe[1]); // close extra pipe end
-            if(i==0){
-                dup2(saveStdout, 1); // if in shell, restore stdout to terminal
-                waitpid(lastChild,NULL,0);
+        if (!isParent) {
+            // handle children
+            childReturn =childRunner(argsListPipeSplit, apipe, i);
+            if (childReturn != 0)
+            {
+                return childReturn;
             }
         }
-
+        else
+        {
+            if(i == (*argsAmtPipeSplit - 1))
+            {
+                // save last child's pid
+                lastChild = isParent;
+            }
+            // close read end of pipe for parent
+            close(apipe[0]);
+            // close stdout
+            close(STDOUT);
+            if(i!=0)
+            {
+                // if not sort, duplicate pipe write end into stdout
+                dup(apipe[1]);
+            }
+            // close extra pipe end
+            close(apipe[1]);
+            if(i==0)
+            {
+                // if in shell, restore stdout to terminal
+                dup2(saveStdout, STDOUT);
+                waitpid(lastChild, &returnStatus,0);
+            }
+        }
     }
-    // Free spares
-    free(argAmt);
-    printf("Parent ID: [%d]\n", getpid());
-    // Wait on PIDs
-    returnStatus = malloc(sizeof(int));
-    // Only get final
 
-//    exitCode = *returnStatus;
-    exitCode = 0;
-    free(returnStatus);
+    // Valgrind got very angry unless I did it some weird way like this
+    // stack/heap allocations
+    code = malloc(sizeof(int));
+    parseReturnStatus(returnStatus, code);
+    exitCode = *code;
+    free(code);
 
     free(apipe);
     return exitCode;
