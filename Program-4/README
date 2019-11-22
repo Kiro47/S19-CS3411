@@ -1,0 +1,14 @@
+Tests Ran and passed:
+
+ls
+ls -lah
+ls -lah /
+ls -lah .
+ls -lah | grep utils
+ls -lah | grep utils > utils.list
+sort < filecomm1.c | grep fprintf | wc > filecomm.sorted.out
+cd
+cd ../
+cd /
+vim
+
