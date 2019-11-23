@@ -52,5 +52,5 @@ void printShellPrompt(int statusCode, char* processName);
  *     0: Normal execution
  *     1: `exit` builtin used, return and exit program
  */
-int spawnShell(char* processName, int statusCode);
+void spawnShell(char* processName, int *statusCode);
 #endif

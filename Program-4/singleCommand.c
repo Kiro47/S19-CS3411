@@ -8,6 +8,8 @@
 #include <unistd.h>
 #include <signal.h>
 #include <limits.h>
+#include <sys/types.h>
+#include <fcntl.h>
 
 // PRIVATE FUNC
 /*
@@ -41,6 +43,79 @@ void handleStandardFDOverwrites(int fdStdin, int fdStdout, int fdStderr)
 }
 
 
+void parseRedirects(char** commandArgs)
+{
+    int i;
+    int j;
+    int args;
+    int fdOutputRedir;
+    int fdInputRedir;
+    fdOutputRedir = STDOUT;
+    fdInputRedir = STDIN;
+
+    args = 0;
+    while (commandArgs[args] != NULL)
+    {
+        args++;
+    }
+
+    // Redir as the first part of a command is invalid by spec
+    for (i = 1; i < args; i++)
+    {
+        if (strcmp(commandArgs[i], ">") == 0)
+        {
+            if (commandArgs[i+1] == NULL)
+            {
+                write(STDERR, "Invalid Redirect\n", sizeof(char) * 18);
+                return;
+            }
+            fdOutputRedir = open(commandArgs[i+1],
+                    O_CREAT|O_RDWR|O_CLOEXEC, 0644);
+            if (fdOutputRedir == -1)
+            {
+                write(STDERR, "Invalid Redirect\n", sizeof(char) * 18);
+                write(STDERR, strerror(errno),
+                        sizeof(char) * strlen(strerror(errno)));
+                return;
+            }
+            close(STDOUT);
+            dup(fdOutputRedir);
+            // Strip from command Args
+            commandArgs[i] = 0;
+            commandArgs[i+1] = 0;
+            // Skip over next arg, we already know it
+            i++;
+        }
+        if (strcmp(commandArgs[i], "<") == 0)
+        {
+            if (commandArgs[i+1] == NULL)
+            {
+                write(STDERR, "Invalid Redirect\n", sizeof(char) * 18);
+                return;
+            }
+            fdInputRedir = open(commandArgs[i+1],
+                    O_RDONLY|O_CLOEXEC, 0444);
+            if (fdInputRedir == -1)
+            {
+                write(STDERR, "Invalid Redirect\n", sizeof(char) * 18);
+                write(STDERR, strerror(errno),
+                        sizeof(char) * strlen(strerror(errno)));
+                return;
+            }
+            close(STDIN);
+            dup(fdInputRedir);
+            // Strip from command Args
+            for (j = i; j < args; j++)
+            {
+                commandArgs[j] = 0;
+                strcpy(commandArgs[j], commandArgs[j+1]);
+            }
+            // Decrease back down one, and lower args by the two we removed
+            args -= 2;
+            i--;
+        }
+    }
+}
 
 /*
  * runCommand(char** commandArgs)
@@ -87,6 +162,7 @@ int runCommand(char** commandArgs, int fdStdin, int fdStdout, int fdStderr)
     }
     if (childPID == 0)
     {
+        parseRedirects(commandArgs);
         // Child thread
         // Handle file descriptor specs
         handleStandardFDOverwrites(fdStdin, fdStdout, fdStderr);

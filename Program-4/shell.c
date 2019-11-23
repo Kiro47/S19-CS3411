@@ -187,7 +187,7 @@ void printShellPrompt(int statusCode, char* processName)
  *     0: Normal execution
  *     1: `exit` builtin used, return and exit program
  */
-int spawnShell(char* processName, int statusCode)
+void spawnShell(char* processName, int *statusCode)
 {
     int argsLen;
     int *argAmt;
@@ -200,7 +200,7 @@ int spawnShell(char* processName, int statusCode)
     int i, j;
 
     // Prompt shell
-    printShellPrompt(statusCode, processName);
+    printShellPrompt(*statusCode, processName);
 
 
     args = malloc(sizeof(char) * DEFAULT_INPUT_LENGTH);
@@ -224,12 +224,12 @@ int spawnShell(char* processName, int statusCode)
         argAmt = malloc(sizeof(int));
         // No pipe, parse args
         argsList = splitArgs(args, argAmt, " ");
-        statusCode = runCommand(argsList, -1, -1, -1);
+        statusCode[0] = runCommand(argsList, -1, -1, -1);
         freeStringArray(argsList, argAmt);
     }
     else
     {
-        statusCode = runMultipleCommands(argsListPipeSplit, argsAmtPipeSplit);
+        statusCode[0] = runMultipleCommands(argsListPipeSplit, argsAmtPipeSplit);
     }
 
     // Done with arrays, clean up
@@ -241,6 +241,6 @@ int spawnShell(char* processName, int statusCode)
     // Free up arg array
     free(args);
 //    exit(0);
-    return statusCode;
+//    return statusCode;
 }
 

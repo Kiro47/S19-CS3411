@@ -1,14 +1,39 @@
 Tests Ran and passed:
 
+# General Tests
 ls
 ls -lah
 ls -lah /
 ls -lah .
+
+# Pipe Test
 ls -lah | grep utils
+
+# Redirect + Pipe Test
 ls -lah | grep utils > utils.list
 sort < filecomm1.c | grep fprintf | wc > filecomm.sorted.out
+
+# CD tests
 cd
 cd ../
 cd /
+
+# Misc
 vim
+
+# Return Code tests
+grep
+cd
+
+
+# Notes:
+1.
+This is not a login shell, it spawns the shell in your current working,
+not your home directory. Switching to home directory can be invoked
+with "cd".
+
+2.
+The "exit" builtin for some reason refuses to exit the program in valgrind,
+however it works perfectly fine in usage and GDB.  Unsure of the cause of this.
+
 

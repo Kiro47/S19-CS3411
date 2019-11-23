@@ -134,6 +134,7 @@ int runMultipleCommands(char** argsListPipeSplit, int* argsAmtPipeSplit)
     int childReturn;
     int lastChild;
     int saveStdout;
+    i = 0;
     saveStdout = dup(STDOUT);
     apipe = malloc(sizeof(int) * 2);
     // Reverse build command chain
