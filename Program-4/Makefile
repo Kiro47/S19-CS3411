@@ -1,6 +1,6 @@
 ### Might need customized
 # Final executable/program name
-EXECUTABLE_NAME ?= simpleshell
+EXECUTABLE_NAME ?= simplesh
 # Compiler
 CC ?= gcc
 # C/CPP standard flag
