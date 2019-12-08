@@ -80,20 +80,15 @@ void disconnect(conn_t *connection)
 }
 
 // TODO: redefine for struct
-int sendData(conn_t *connection)
+int sendData(conn_t *connection, msgProto *msg)
 {
     int returnValue;
     char* testString = "This is a test string";
     char* sendString;
 
-    sendString = malloc(sizeof(char) * (strlen(testString) +1));
-    strcpy(sendString, testString);
-    sendString[strlen(testString)] = 0;
     returnValue = 0;
     // Send data
-    returnValue = send(connection->sockfd,
-            sendString,
-            sizeof(char) * strlen(sendString) + 1, 0);
+    returnValue = send(connection->sockfd, msg, sizeof(msgProto), 0);
 
     if (returnValue >= 0)
     {
@@ -154,7 +149,12 @@ int establishedConnection(conn_t *connection)
         if (1)
         {
             // TODO: actually send stuff right.
-            returnValue = sendData(connection);
+            msgProto *msg = malloc(sizeof(msgProto));
+            msg->connType = SERRECV;
+            strcpy(msg->userName, "testuser");
+            strcpy(msg->msg, "test message");
+            msg->channel = 0;
+            returnValue = sendData(connection, msg);
             if (returnValue != 0)
             {
                 break;

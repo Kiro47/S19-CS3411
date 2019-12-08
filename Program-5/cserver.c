@@ -1,4 +1,5 @@
 #include "utils.h"
+#include "protocol.h"
 
 #include <string.h>
 #include <arpa/inet.h>
@@ -29,7 +30,7 @@ void listeningService(struct sockaddr_in listenerSocket, int listener)
     struct timeval timeout;
     fd_set readfds;
     int returnValue;
-    char* readBuffer;
+    msgProto *readBuffer;
 
     exit = 0;
     listen(listener, 1);
@@ -59,15 +60,19 @@ void listeningService(struct sockaddr_in listenerSocket, int listener)
             if (FD_ISSET(connection, &readfds))
             {
                 // TODO: struct me
-                readBuffer = malloc(sizeof(char) * 120);
-                returnValue = recv(connection, readBuffer, 120, 0);
+                readBuffer = malloc(sizeof(msgProto));
+                returnValue = recv(connection, readBuffer, sizeof(msgProto), 0);
                 if (returnValue <= 0)
                 {
                     // Error in reading or broke pipe
                     break;
                 }
 
-                write(STDOUT, readBuffer, strlen(readBuffer) * sizeof(char));
+                write(STDOUT, readBuffer->userName,
+                        strlen(readBuffer->userName) * sizeof(char));
+                write(STDOUT, " ", sizeof(char));
+                write(STDOUT, readBuffer->msg,
+                        strlen(readBuffer->msg) * sizeof(char));
                 write(STDOUT, "\n", sizeof(char));
             }
         }
