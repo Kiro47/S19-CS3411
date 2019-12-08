@@ -1,8 +1,13 @@
 #ifndef PROGRAM_5_PROTOCOL_H
 #define PROGRAM_5_PROTOCOL_H
 
-#define MAX_MSG_SIZE 128
+#ifndef MAX_USERNAME_SIZE
 #define MAX_USERNAME_SIZE 128
+#endif
+
+#ifndef MAX_MSG_SIZE
+#define MAX_MSG_SIZE 128
+#endif
 
 enum connectionType{
     ESTCONN, // Establish client connection to server
