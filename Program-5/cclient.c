@@ -11,6 +11,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 void printHelp()
 {
@@ -92,13 +94,13 @@ int sendData(conn_t *connection, msgProto *msg)
 
     if (returnValue >= 0)
     {
-        printf("%d\n", returnValue);
+//        printf("%d\n", returnValue);
         // send returnValue * (char) data
         // or sent nothing
         returnValue = 0;
     }
     sleep(3);
-    printf("%d\n", returnValue);
+//    printf("%d\n", returnValue);
 
     return returnValue;
 }
@@ -108,7 +110,7 @@ int receiveData(conn_t *connection)
 
 }
 
-int establishedConnection(conn_t *connection)
+int establishedConnection(conn_t *connection, int userPipe)
 {
     // All
     struct timeval timeout;
@@ -159,14 +161,100 @@ int establishedConnection(conn_t *connection)
             {
                 break;
             }
+            free(msg);
         }
     }
     disconnect(connection);
     return returnValue;
 }
 
+char* readInput()
+{
+    // Get user input
+    char* userInput;
+
+    userInput = malloc(sizeof(char) * MAX_MSG_SIZE);
+    userInput = input(userInput);
+
+    if (strlen(userInput) >= MAX_MSG_SIZE)
+    {
+        // We're just going to clip any messages over the max
+        userInput[MAX_MSG_SIZE - 1] = '\0';
+    }
+    return userInput;
+}
+
+char* getUsername()
+{
+    char* userInput;
+
+    write(STDOUT, "What would you like your username to be? ",
+            sizeof(char) * 43);
+
+    userInput = malloc(sizeof(char) * MAX_USERNAME_SIZE);
+    userInput = input(userInput);
+
+    if (strlen(userInput) >= MAX_USERNAME_SIZE)
+    {
+        userInput[MAX_USERNAME_SIZE] = '\0';
+    }
+    return userInput;
+}
+
+char* constructPrompt(char* username)
+{
+    char* prompt;
+    int i, j;
+
+    prompt = malloc(sizeof(char) * (MAX_USERNAME_SIZE + 4));
+    i =0;
+    prompt[i++] = '<';
+    for (j = 0; j < strlen(username); j++)
+    {
+        // Shouldn't ever happen, but prevention
+        if (username[j] == '\0')
+        {
+            break;
+        }
+        prompt[i++] = username[j];
+    }
+    prompt[i++] = '>';
+    prompt[i++] = ' ';
+    prompt[i] = '\0';
+    return prompt;
+}
+
+
+void launchUser(int writePipe)
+{
+    char* username;
+    char* prompt;
+    char* input;
+
+    username = getUsername();
+    prompt = constructPrompt(username);
+
+    printf("%s\n", username);
+
+    while(1 == 1)
+    {
+        // Ask user for input
+        printf("242");
+        write(STDOUT, prompt, strlen(prompt) * sizeof(char));
+        // Keep looking for read input
+        input = readInput();
+
+        free(input);
+    }
+    free(username);
+    free(prompt);
+}
+
 int main(int argc, char** argv)
 {
+    pid_t pid;
+    int pipes[2];
+
     conn_t *connection;
     printf("client\n");
 
@@ -180,10 +268,27 @@ int main(int argc, char** argv)
     connection = resolveConnection(argv[1], argv[2]);
     if (connection == NULL)
     {
-        write(stderr, "Error establishing connection.\n", 32);
+        write(STDERR, "Error establishing connection.\n", 32);
         return -1;
     }
+    // Establish pipe
+    pipe2(pipes, O_NONBLOCK|O_CLOEXEC);
     // Begin processing
-    establishedConnection(connection);
-    free(connection);
+    pid = fork();
+    if (pid == 0)
+    {
+        // Close read on pipe
+        close(pipes[0]);
+        // Launch child reader
+        launchUser(pipes[1]);
+    }
+    else
+    {
+        // Close write on pipe
+        close(pipes[1]);
+        // Establish networking maintence
+        establishedConnection(connection, pipes[0]);
+        free(connection);
+    }
+    return 0;
 }
