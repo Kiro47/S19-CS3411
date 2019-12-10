@@ -3,6 +3,7 @@
 #include "utils.h"
 
 #include <arpa/inet.h>
+#include <signal.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <netdb.h>
@@ -10,6 +11,7 @@
 #include <netinet/in.h>
 #include <string.h>
 #include <stdlib.h>
+#include <poll.h>
 #include <stdio.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -107,7 +109,22 @@ int sendData(conn_t *connection, msgProto *msg)
 
 int receiveData(conn_t *connection)
 {
+    int returnValue;
+    msgProto *readBuffer;
+    readBuffer = malloc(sizeof(msgProto));
+    returnValue = recv(connection->sockfd, readBuffer, sizeof(msgProto), 0);
 
+    if (returnValue <= 0)
+    {
+        // Error in reading or broke pipe
+        return -1;
+    }
+    write(STDOUT, readBuffer->userName,
+            strlen(readBuffer->userName) * sizeof(char));
+    write(STDOUT, " ", sizeof(char));
+    write(STDOUT, readBuffer->msg,
+            strlen(readBuffer->userName) * sizeof(char));
+    write(STDOUT, "\n", sizeof(char));
 }
 
 int establishedConnection(conn_t *connection, int userPipe)
@@ -116,9 +133,11 @@ int establishedConnection(conn_t *connection, int userPipe)
     struct timeval timeout;
     fd_set readfds;
     int returnValue;
-
+    int readValue;
 
     returnValue = 0;
+    msgProto *msg = malloc(sizeof(msgProto));
+
     // Received
     // Sending
 
@@ -148,22 +167,24 @@ int establishedConnection(conn_t *connection, int userPipe)
 
         // Send data if any exists
         // TODO: read struct
-        if (1)
+        readValue = read(connection->sockfd, msg, sizeof(msgProto));
+        printf("Read: %d\n", readValue);
+        if (readValue != -1)
         {
             // TODO: actually send stuff right.
-            msgProto *msg = malloc(sizeof(msgProto));
             msg->connType = SERRECV;
             strcpy(msg->userName, "testuser");
             strcpy(msg->msg, "test message");
             msg->channel = 0;
+            printf("help\n");
             returnValue = sendData(connection, msg);
             if (returnValue != 0)
             {
                 break;
             }
-            free(msg);
         }
     }
+    free(msg);
     disconnect(connection);
     return returnValue;
 }
@@ -189,7 +210,7 @@ char* getUsername()
     char* userInput;
 
     write(STDOUT, "What would you like your username to be? ",
-            sizeof(char) * 43);
+            sizeof(char) * 42);
 
     userInput = malloc(sizeof(char) * MAX_USERNAME_SIZE);
     userInput = input(userInput);
@@ -230,30 +251,55 @@ void launchUser(int writePipe)
     char* username;
     char* prompt;
     char* input;
+    msgProto *tempProto;
 
     username = getUsername();
     prompt = constructPrompt(username);
 
+    tempProto = malloc(sizeof(msgProto));
     printf("%s\n", username);
 
     while(1 == 1)
     {
         // Ask user for input
-        printf("242");
         write(STDOUT, prompt, strlen(prompt) * sizeof(char));
         // Keep looking for read input
         input = readInput();
+        tempProto->connType = SERRECV;
+        strcpy(tempProto->userName, username);
+        strcpy(tempProto->msg, input);
+        tempProto->channel = 0;
+        printf("writing\n");
+        write(writePipe, tempProto, sizeof(msgProto));
 
+        bzero(tempProto, sizeof(msgProto));
         free(input);
     }
     free(username);
     free(prompt);
+    free(tempProto);
+}
+
+void genericHandler(int sig)
+{
+    return;
 }
 
 int main(int argc, char** argv)
 {
     pid_t pid;
     int pipes[2];
+
+    struct sigaction newTTYHandler;
+    struct sigaction oldTTYHandler;
+
+//    key_t key;
+//    int shmid;
+//    int mutex; // close enough for this
+
+//    key = ftok("test", 'R');
+//    shmid = shmget(key, sizeof(int), 0600 | IPC_CREATE);
+//    mutex = shmat(shmid, NULL, 0);
 
     conn_t *connection;
     printf("client\n");
@@ -264,19 +310,27 @@ int main(int argc, char** argv)
         return 0;
     }
     // Resolve server
-
     connection = resolveConnection(argv[1], argv[2]);
     if (connection == NULL)
     {
         write(STDERR, "Error establishing connection.\n", 32);
         return -1;
     }
+
     // Establish pipe
     pipe2(pipes, O_NONBLOCK|O_CLOEXEC);
+    // Store and wipe TTY sighandler
+    memset(&newTTYHandler, 0, sizeof(struct sigaction));
+    sigemptyset(&newTTYHandler.sa_mask);
+//    newHandler.sa_handler = SIG_TTIN;
+    sigaction(SIGTTIN, &newTTYHandler, &oldTTYHandler);
+
     // Begin processing
     pid = fork();
     if (pid == 0)
     {
+        // Restore TTY input
+        sigaction(SIGTTIN, &oldTTYHandler, NULL);
         // Close read on pipe
         close(pipes[0]);
         // Launch child reader
@@ -284,9 +338,11 @@ int main(int argc, char** argv)
     }
     else
     {
+        close(STDIN);
         // Close write on pipe
         close(pipes[1]);
         // Establish networking maintence
+        printf("tf");
         establishedConnection(connection, pipes[0]);
         free(connection);
     }

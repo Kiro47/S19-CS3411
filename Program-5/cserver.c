@@ -75,6 +75,14 @@ void listeningService(struct sockaddr_in listenerSocket, int listener)
                         strlen(readBuffer->msg) * sizeof(char));
                 write(STDOUT, "\n", sizeof(char));
             }
+
+            // Check for sending data
+            if (1 == 0)
+            {
+
+            }
+
+
         }
     }
     close(connection);
