@@ -62,13 +62,17 @@ debug:$(EXECUTABLE_NAME_SERVER) $(EXECUTABLE_NAME_CLIENT)
 # Checks format
 .PHONY: check-format
 check-format:
+	RET_VAL=0
 	@for src in $(SOURCE_FILES) ; do \
 		var=`clang-format "$(SOURCE_DIRS)/$$src " | diff "$(SOURCE_DIRS)/$$src" - | wc -l` ; \
 		if [ $$var -ne 0 ] ; then \
 			echo "$$src does not respect the coding style (diff: $$var lines)" ; \
-			exit 1 ; \
+			RET_VAL=$(expr $$RET_VAL + 1 )  ; \
 		fi ; \
 	done
+	if [ $$RET_VAL -ne 0 ] ; then \
+			exit $$RET_VAL ;
+	fi ;
 	@echo "Style check passed"
 
 # Auto formats based on checks

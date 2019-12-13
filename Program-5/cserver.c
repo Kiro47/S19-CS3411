@@ -1,6 +1,7 @@
 #include "message.h"
 #include "utils.h"
 
+#include <arpa/inet.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <netinet/in.h>
@@ -10,7 +11,9 @@
 #include <string.h>
 #include <sys/select.h>
 #include <sys/socket.h>
+#include <sys/types.h>
 #include <unistd.h>
+
 
 // Mostly to prevent overflow issues
 #define MAX_CLIENTS 256
@@ -342,7 +345,9 @@ int receiveServerMsg(peer_t *peer, int (*message_handler)(message_t *)) {
     len_to_receive =
         sizeof(peer->receiving_buffer) - peer->current_receiving_byte;
     if (len_to_receive > MAX_SEND_SIZE)
+    {
       len_to_receive = MAX_SEND_SIZE;
+    }
 
     received_count =
         recv(peer->socket,

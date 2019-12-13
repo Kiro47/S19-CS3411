@@ -9,9 +9,15 @@
 #include "message.h"
 #include "utils.h"
 
+#include <arpa/inet.h>
+#include <errno.h>
+#include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/socket.h>
+#include <sys/socket.h>
+#include <sys/types.h>
 
 // Per packet
 #define MAX_SEND_SIZE 100
@@ -357,7 +363,7 @@ int readSTDIN(char *readBuffer,  size_t maxLength)
     ssize_t total_read = 0;
 
     do {
-        read_count = read(STDIN_FILENO, readBuffer, maxLength);
+        read_count = read(STDIN, readBuffer, maxLength);
         if (read_count < 0 && errno != EAGAIN && errno != EWOULDBLOCK) {
             write(STDERR, strerror(errno), strlen(strerror(errno)) * sizeof(char));
             return -1;
@@ -368,7 +374,8 @@ int readSTDIN(char *readBuffer,  size_t maxLength)
         else if (read_count > 0) {
             total_read += read_count;
             if (total_read > maxLength) {
-                fflush(STDIN_FILENO);
+                // TODO: flush without stdio
+                //fflush(STDIN_FILENO);
                 break;
             }
         }
