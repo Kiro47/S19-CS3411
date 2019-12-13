@@ -1,4 +1,5 @@
-// Simple example of server with select() and multiple clients.
+#include "message.h"
+#include "utils.h"
 
 #include <errno.h>
 #include <stdio.h>
@@ -10,9 +11,6 @@
 #include <fcntl.h>
 #include <netinet/in.h>
 #include <unistd.h>
-
-#include "message.h"
-#include "utils.h"
 
 // Mostly to prevent overflow issues
 #define MAX_CLIENTS 256
@@ -223,9 +221,12 @@ int newConnection()
 
   inet_ntop(AF_INET, &clientAddr.sin_addr, client_ipv4_str, INET_ADDRSTRLEN);
 
-  writeBuffer = malloc(sizeof(clientAddr.sin_port) + (sizeof(char) * (strlen(client_ipv4_str) + 32)) );
-  sprintf(writeBuffer,"Incoming connection from %s:%d.\n", client_ipv4_str, clientAddr.sin_port);
-  write(STDOUT, writeBuffer, sizeof(clientAddr.sin_port) + (sizeof(char) * (strlen(client_ipv4_str) + 32)) );
+  writeBuffer = malloc(sizeof(clientAddr.sin_port) + (sizeof(char) *
+              (strlen(client_ipv4_str) + 32)) );
+  sprintf(writeBuffer,"Incoming connection from %s:%d.\n", client_ipv4_str,
+          clientAddr.sin_port);
+  write(STDOUT, writeBuffer, sizeof(clientAddr.sin_port) + (sizeof(char) *
+              (strlen(client_ipv4_str) + 32)) );
   free(writeBuffer);
 
   for (i = 0; i < MAX_CLIENTS; ++i) {
@@ -237,9 +238,12 @@ int newConnection()
       return 0;
     }
   }
-    writeBuffer = malloc(sizeof(clientAddr.sin_port) + (sizeof(char) * (strlen(client_ipv4_str) + 37)) );
-    sprintf(writeBuffer,"Too many connections, closing %s:%d.\n", client_ipv4_str, clientAddr.sin_port);
-    write(STDOUT, writeBuffer, sizeof(clientAddr.sin_port) + (sizeof(char) * (strlen(client_ipv4_str) + 37)) );
+    writeBuffer = malloc(sizeof(clientAddr.sin_port) + (sizeof(char) *
+                (strlen(client_ipv4_str) + 37)) );
+    sprintf(writeBuffer,"Too many connections, closing %s:%d.\n",
+            client_ipv4_str, clientAddr.sin_port);
+    write(STDOUT, writeBuffer, sizeof(clientAddr.sin_port) + (sizeof(char) *
+                (strlen(client_ipv4_str) + 37)) );
     free(writeBuffer);
   close(newClientSocket);
   return -1;

@@ -59,6 +59,45 @@ debug:$(EXECUTABLE_NAME_SERVER) $(EXECUTABLE_NAME_CLIENT)
 #memory:debug
 #	valgrind "--tool=memcheck --track-origins=yes --leak-check=full $(shell pwd)/$(EXECUTABLE_NAME)" "$(PARGS)"
 
+# Checks format
+.PHONY: check-format
+check-format:
+	@for src in $(SOURCE_FILES) ; do \
+		var=`clang-format "$(SOURCE_DIRS)/$$src " | diff "$(SOURCE_DIRS)/$$src" - | wc -l` ; \
+		if [ $$var -ne 0 ] ; then \
+			echo "$$src does not respect the coding style (diff: $$var lines)" ; \
+			exit 1 ; \
+		fi ; \
+	done
+	@echo "Style check passed"
+
+# Auto formats based on checks
+.PHONY: auto-format
+auto-format:
+	@for src in $(SOURCE_FILES) ; do \
+		echo "Formatting $$src..." ; \
+		clang-format -i "$(SOURCE_DIRS)/$$src" ; \
+	done
+	@echo "Done"
+
+# Checks style
+.PHONY: check-style
+check-style:
+	@for src in $(SOURCE_FILES) ; do \
+		echo "Formatting $$src..." ; \
+		clang-tidy -checks=* \
+			-header-filter=.* \
+		    -config="{CheckOptions: [ \
+		    { key: readability-identifier-naming.NamespaceCase, value: lower_case },\
+		    { key: readability-identifier-naming.ClassCase, value: CamelCase  },\
+		    { key: readability-identifier-naming.StructCase, value: CamelCase  },\
+		    { key: readability-identifier-naming.FunctionCase, value: camelBack },\
+		    { key: readability-identifier-naming.VariableCase, value: lower_case },\
+		    { key: readability-identifier-naming.GlobalConstantCase, value: UPPER_CASE }\
+		    ]}" "$(SOURCE_DIRS)/$$src" -- ; \
+	done
+	@echo "Done"
+
 # Production build, debug symbols stripped
 .PHONY: prod
 prod:$(EXECUTABLE_NAME)

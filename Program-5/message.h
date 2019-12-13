@@ -7,11 +7,11 @@
  */
 
 #include "message.h"
+#include "utils.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "utils.h"
 
 // Per packet
 #define MAX_SEND_SIZE 100
