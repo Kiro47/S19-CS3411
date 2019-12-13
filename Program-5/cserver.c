@@ -2,14 +2,14 @@
 #include "utils.h"
 
 #include <errno.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/select.h>
-#include <sys/socket.h>
-#include <signal.h>
-#include <string.h>
 #include <fcntl.h>
 #include <netinet/in.h>
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/select.h>
+#include <sys/socket.h>
 #include <unistd.h>
 
 // Mostly to prevent overflow issues
@@ -35,13 +35,12 @@ void shutdownServer(int code);
  *  Args:
  *      listenerPort: Port to print
  */
-void printPort(uint16_t listenerPort)
-{
-    char* stdioBuffer;
-    stdioBuffer = malloc(sizeof(listenerPort) + 21);
-    sprintf(stdioBuffer, "Listening Port: %d\n", ntohs(listenerPort));
-    write(STDOUT, stdioBuffer, strlen(stdioBuffer) * sizeof(char));
-    free(stdioBuffer);
+void printPort(uint16_t listenerPort) {
+  char *stdioBuffer;
+  stdioBuffer = malloc(sizeof(listenerPort) + 21);
+  sprintf(stdioBuffer, "Listening Port: %d\n", ntohs(listenerPort));
+  write(STDOUT, stdioBuffer, strlen(stdioBuffer) * sizeof(char));
+  free(stdioBuffer);
 }
 
 /*
@@ -52,20 +51,18 @@ void printPort(uint16_t listenerPort)
  *  Args:
  *      signalNumber: Signal received
  */
-void handleSignalAction(int sig_number)
-{
-    int fail;
-    fail = 0;
-    if (sig_number == SIGINT) {
-        fail = 1;
-        write(STDOUT, "SIGINT Caught, Exiting.\n", 26 * sizeof(char));
-    }
+void handleSignalAction(int sig_number) {
+  int fail;
+  fail = 0;
+  if (sig_number == SIGINT) {
+    fail = 1;
+    write(STDOUT, "SIGINT Caught, Exiting.\n", 26 * sizeof(char));
+  }
 
-    // Room for more signals
-    if (fail == 1)
-    {
-        shutdownServer(0);
-    }
+  // Room for more signals
+  if (fail == 1) {
+    shutdownServer(0);
+  }
 }
 
 /*
@@ -75,12 +72,11 @@ void handleSignalAction(int sig_number)
  *      -1: Error registering signal handler
  *       0: Sucess registering all handlers
  */
-int setupSignalHandlers()
-{
+int setupSignalHandlers() {
   struct sigaction sa;
   sa.sa_handler = handleSignalAction;
   if (sigaction(SIGINT, &sa, 0) != 0) {
-      write(STDERR, strerror(errno), strlen(strerror(errno)) * sizeof(char));
+    write(STDERR, strerror(errno), strlen(strerror(errno)) * sizeof(char));
     return -1;
   }
 
@@ -96,43 +92,44 @@ int setupSignalHandlers()
  *      -1: Failed in some way
  *       0: Success
  */
-int startListener(int *listener)
-{
-    int listenerLength;
-    struct sockaddr_in listenerSocket;
+int startListener(int *listener) {
+  int listenerLength;
+  struct sockaddr_in listenerSocket;
 
-    // Obtain a file descriptor for our "listening" socket.
+  // Obtain a file descriptor for our "listening" socket.
   *listener = socket(AF_INET, SOCK_STREAM, 0);
   if (*listener < 0) {
-      write(STDERR, strerror(errno), strlen(strerror(errno)) * sizeof(char));
+    write(STDERR, strerror(errno), strlen(strerror(errno)) * sizeof(char));
     return -1;
   }
 
   bzero((char *)&listenerSocket, sizeof(listenerSocket));
-  listenerSocket.sin_family = (short) AF_INET;
+  listenerSocket.sin_family = (short)AF_INET;
   listenerSocket.sin_addr.s_addr = htonl(INADDR_ANY);
   listenerSocket.sin_port = htons(0);
 
-  if (bind(*listener, (struct sockaddr*)&listenerSocket, sizeof(struct sockaddr)) != 0) {
-      write(STDERR, strerror(errno), strlen(strerror(errno)) * sizeof(char));
+  if (bind(*listener, (struct sockaddr *)&listenerSocket,
+           sizeof(struct sockaddr)) != 0) {
+    write(STDERR, strerror(errno), strlen(strerror(errno)) * sizeof(char));
     return -1;
   }
 
   listenerLength = sizeof(struct sockaddr);
-    if (getsockname(*listener, (struct sockaddr *) &listenerSocket, &listenerLength)) {
-        write(STDERR, strerror(errno), strlen(strerror(errno)) * sizeof(char));
-        return -1;
-    }
+  if (getsockname(*listener, (struct sockaddr *)&listenerSocket,
+                  &listenerLength)) {
+    write(STDERR, strerror(errno), strlen(strerror(errno)) * sizeof(char));
+    return -1;
+  }
 
   // start accept client connections
   if (listen(*listener, 10) != 0) {
-      write(STDERR, strerror(errno), strlen(strerror(errno)) * sizeof(char));
+    write(STDERR, strerror(errno), strlen(strerror(errno)) * sizeof(char));
     return -1;
   }
 
   printPort(listenerSocket.sin_port);
 
-    return 0;
+  return 0;
 }
 
 /*
@@ -141,8 +138,7 @@ int startListener(int *listener)
  *  Args:
  *      exitCode: Exit code to return with
  */
-void shutdownServer(int code)
-{
+void shutdownServer(int code) {
   int i;
 
   close(listener_socket);
@@ -151,11 +147,11 @@ void shutdownServer(int code)
     if (connections[i].socket != NO_SOCKET)
       close(connections[i].socket);
 
-    for (i = 0; i < MAX_CLIENTS; ++i) {
-        free(connections[i].send_buffer.data);
-    }
+  for (i = 0; i < MAX_CLIENTS; ++i) {
+    free(connections[i].send_buffer.data);
+  }
 
-    write(STDOUT, "Server shutdown.\n", sizeof(char) * 19);
+  write(STDOUT, "Server shutdown.\n", sizeof(char) * 19);
   exit(code);
 }
 
@@ -169,8 +165,7 @@ void shutdownServer(int code)
  *      writeFDs:   file descriptors to write with
  *      exceptFDs:  file descriptors to deal with exceptions
  */
-int buildFDs(fd_set *read_fds, fd_set *write_fds, fd_set *except_fds)
-{
+int buildFDs(fd_set *read_fds, fd_set *write_fds, fd_set *except_fds) {
   int i;
 
   FD_ZERO(read_fds);
@@ -182,7 +177,8 @@ int buildFDs(fd_set *read_fds, fd_set *write_fds, fd_set *except_fds)
 
   FD_ZERO(write_fds);
   for (i = 0; i < MAX_CLIENTS; ++i)
-    if (connections[i].socket != NO_SOCKET && connections[i].send_buffer.current > 0)
+    if (connections[i].socket != NO_SOCKET &&
+        connections[i].send_buffer.current > 0)
       FD_SET(connections[i].socket, write_fds);
 
   FD_ZERO(except_fds);
@@ -202,49 +198,50 @@ int buildFDs(fd_set *read_fds, fd_set *write_fds, fd_set *except_fds)
  *      -1: Error occurred setting up new socket
  *       0: Success
  */
-int newConnection()
-{
+int newConnection() {
   struct sockaddr_in clientAddr;
-    int newClientSocket;
-    char client_ipv4_str[INET_ADDRSTRLEN];
-    int i;
-    char *writeBuffer;
+  int newClientSocket;
+  char client_ipv4_str[INET_ADDRSTRLEN];
+  int i;
+  char *writeBuffer;
 
-
-    memset(&clientAddr, 0, sizeof(clientAddr));
+  memset(&clientAddr, 0, sizeof(clientAddr));
   socklen_t clientLength = sizeof(clientAddr);
-    newClientSocket = accept(listener_socket, (struct sockaddr *)&clientAddr, &clientLength);
+  newClientSocket =
+      accept(listener_socket, (struct sockaddr *)&clientAddr, &clientLength);
   if (newClientSocket < 0) {
-      write(STDERR, strerror(errno), strlen(strerror(errno)) * sizeof(char));
+    write(STDERR, strerror(errno), strlen(strerror(errno)) * sizeof(char));
     return -1;
   }
 
   inet_ntop(AF_INET, &clientAddr.sin_addr, client_ipv4_str, INET_ADDRSTRLEN);
 
-  writeBuffer = malloc(sizeof(clientAddr.sin_port) + (sizeof(char) *
-              (strlen(client_ipv4_str) + 32)) );
-  sprintf(writeBuffer,"Incoming connection from %s:%d.\n", client_ipv4_str,
+  writeBuffer = malloc(sizeof(clientAddr.sin_port) +
+                       (sizeof(char) * (strlen(client_ipv4_str) + 32)));
+  sprintf(writeBuffer, "Incoming connection from %s:%d.\n", client_ipv4_str,
           clientAddr.sin_port);
-  write(STDOUT, writeBuffer, sizeof(clientAddr.sin_port) + (sizeof(char) *
-              (strlen(client_ipv4_str) + 32)) );
+  write(STDOUT, writeBuffer,
+        sizeof(clientAddr.sin_port) +
+            (sizeof(char) * (strlen(client_ipv4_str) + 32)));
   free(writeBuffer);
 
   for (i = 0; i < MAX_CLIENTS; ++i) {
     if (connections[i].socket == NO_SOCKET) {
-        connections[i].socket = newClientSocket;
-        connections[i].addres = clientAddr;
-        connections[i].current_sending_byte   = -1;
-        connections[i].current_receiving_byte = 0;
+      connections[i].socket = newClientSocket;
+      connections[i].addres = clientAddr;
+      connections[i].current_sending_byte = -1;
+      connections[i].current_receiving_byte = 0;
       return 0;
     }
   }
-    writeBuffer = malloc(sizeof(clientAddr.sin_port) + (sizeof(char) *
-                (strlen(client_ipv4_str) + 37)) );
-    sprintf(writeBuffer,"Too many connections, closing %s:%d.\n",
-            client_ipv4_str, clientAddr.sin_port);
-    write(STDOUT, writeBuffer, sizeof(clientAddr.sin_port) + (sizeof(char) *
-                (strlen(client_ipv4_str) + 37)) );
-    free(writeBuffer);
+  writeBuffer = malloc(sizeof(clientAddr.sin_port) +
+                       (sizeof(char) * (strlen(client_ipv4_str) + 37)));
+  sprintf(writeBuffer, "Too many connections, closing %s:%d.\n",
+          client_ipv4_str, clientAddr.sin_port);
+  write(STDOUT, writeBuffer,
+        sizeof(clientAddr.sin_port) +
+            (sizeof(char) * (strlen(client_ipv4_str) + 37)));
+  free(writeBuffer);
   close(newClientSocket);
   return -1;
 }
@@ -255,17 +252,17 @@ int newConnection()
  *  Args:
  *      client: Client connection to close.
  */
-int closeClientConnection(peer_t *client)
-{
-  char* writeBuffer;
+int closeClientConnection(peer_t *client) {
+  char *writeBuffer;
   writeBuffer = malloc((sizeof(char) * (32)) + sizeof(peerGetAddr(client)));
   sprintf(writeBuffer, "Close client socket for %s.\n", peerGetAddr(client));
-  write(STDOUT, writeBuffer, (sizeof(char) * (32)) + sizeof(peerGetAddr(client)) );
+  write(STDOUT, writeBuffer,
+        (sizeof(char) * (32)) + sizeof(peerGetAddr(client)));
   free(writeBuffer);
   close(client->socket);
   client->socket = NO_SOCKET;
-    dequeueAll(&client->send_buffer);
-  client->current_sending_byte   = -1;
+  dequeueAll(&client->send_buffer);
+  client->current_sending_byte = -1;
   client->current_receiving_byte = 0;
 }
 
@@ -279,18 +276,18 @@ int closeClientConnection(peer_t *client)
  *  Returns:
  *      -1: Error reading from STDIN
  *       0: Success
- */int readin()
-{
-    int i;
-    char readBuffer[DATA_MAXSIZE];
-    message_t newMsg;
+ */
+int readin() {
+  int i;
+  char readBuffer[DATA_MAXSIZE];
+  message_t newMsg;
 
-    if (readSTDIN(readBuffer, DATA_MAXSIZE) != 0)
+  if (readSTDIN(readBuffer, DATA_MAXSIZE) != 0)
     return -1;
 
   // Create new message and enqueue it.
-    prepareMessage(SERVER_NAME, readBuffer, &newMsg);
-    printMessage(&newMsg);
+  prepareMessage(SERVER_NAME, readBuffer, &newMsg);
+  printMessage(&newMsg);
 
   /* enqueue message for all clients */
   for (i = 0; i < MAX_CLIENTS; ++i) {
@@ -312,9 +309,8 @@ int closeClientConnection(peer_t *client)
  *  Returns:
  *      0: Possible Success
  */
-int handleReceived(message_t *message)
-{
-    printMessage(message);
+int handleReceived(message_t *message) {
+  printMessage(message);
   return 0;
 }
 
@@ -329,60 +325,61 @@ int handleReceived(message_t *message)
  *      -1: Failure
  *       0: Success
  */
-int receiveServerMsg(peer_t *peer, int (*message_handler)(message_t *))
-{
-    size_t len_to_receive;
-    ssize_t received_count;
-    int i;
+int receiveServerMsg(peer_t *peer, int (*message_handler)(message_t *)) {
+  size_t len_to_receive;
+  ssize_t received_count;
+  int i;
 
-    size_t received_total = 0;
-    do {
-        // Is completely received?
-        if (peer->current_receiving_byte >= sizeof(peer->receiving_buffer)) {
-            message_handler(&peer->receiving_buffer);
-            peer->current_receiving_byte = 0;
-        }
-
-        // Count bytes to send.
-        len_to_receive = sizeof(peer->receiving_buffer) - peer->current_receiving_byte;
-        if (len_to_receive > MAX_SEND_SIZE)
-            len_to_receive = MAX_SEND_SIZE;
-
-        received_count = recv(peer->socket, (char *)&peer->receiving_buffer + peer->current_receiving_byte, len_to_receive, MSG_DONTWAIT);
-        if (received_count < 0) {
-            if (errno == EAGAIN || errno == EWOULDBLOCK) {
-            }
-            else {
-                write(STDERR, strerror(errno), strlen(strerror(errno)) * sizeof(char));
-                return -1;
-            }
-        }
-        else if (received_count < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
-            break;
-        }
-            // If recv() returns 0, it means that peer gracefully shutdown. Shutdown client.
-        else if (received_count == 0) {
-            return -1;
-        }
-        else if (received_count > 0) {
-            peer->current_receiving_byte += received_count;
-            received_total += received_count;
-        }
-    } while (received_count > 0);
-
-    // Send to the rest of the clients
-    for (i = 0; i < MAX_CLIENTS; ++i) {
-        if (connections[i].socket != NO_SOCKET) {
-            if (connections[i].socket != peer->socket)
-            {
-
-                if (peerAdd(&connections[i], &peer->receiving_buffer) != 0) {
-                    continue;
-                }
-            }
-        }
+  size_t received_total = 0;
+  do {
+    // Is completely received?
+    if (peer->current_receiving_byte >= sizeof(peer->receiving_buffer)) {
+      message_handler(&peer->receiving_buffer);
+      peer->current_receiving_byte = 0;
     }
-    return 0;
+
+    // Count bytes to send.
+    len_to_receive =
+        sizeof(peer->receiving_buffer) - peer->current_receiving_byte;
+    if (len_to_receive > MAX_SEND_SIZE)
+      len_to_receive = MAX_SEND_SIZE;
+
+    received_count =
+        recv(peer->socket,
+             (char *)&peer->receiving_buffer + peer->current_receiving_byte,
+             len_to_receive, MSG_DONTWAIT);
+    if (received_count < 0) {
+      if (errno == EAGAIN || errno == EWOULDBLOCK) {
+      } else {
+        write(STDERR, strerror(errno), strlen(strerror(errno)) * sizeof(char));
+        return -1;
+      }
+    } else if (received_count < 0 &&
+               (errno == EAGAIN || errno == EWOULDBLOCK)) {
+      break;
+    }
+    // If recv() returns 0, it means that peer gracefully shutdown. Shutdown
+    // client.
+    else if (received_count == 0) {
+      return -1;
+    } else if (received_count > 0) {
+      peer->current_receiving_byte += received_count;
+      received_total += received_count;
+    }
+  } while (received_count > 0);
+
+  // Send to the rest of the clients
+  for (i = 0; i < MAX_CLIENTS; ++i) {
+    if (connections[i].socket != NO_SOCKET) {
+      if (connections[i].socket != peer->socket) {
+
+        if (peerAdd(&connections[i], &peer->receiving_buffer) != 0) {
+          continue;
+        }
+      }
+    }
+  }
+  return 0;
 }
 
 /*
@@ -394,37 +391,36 @@ int receiveServerMsg(peer_t *peer, int (*message_handler)(message_t *))
  *  Returns:
  *      Program return code
  */
-int main(int argc, char **argv)
-{
-    int i;
-    int flag;
-    int highestSocket;
-    int activity;
+int main(int argc, char **argv) {
+  int i;
+  int flag;
+  int highestSocket;
+  int activity;
 
-    fd_set read_fds;
-    fd_set write_fds;
-    fd_set except_fds;
+  fd_set read_fds;
+  fd_set write_fds;
+  fd_set except_fds;
 
-    if (setupSignalHandlers() != 0)
+  if (setupSignalHandlers() != 0)
     exit(EXIT_FAILURE);
 
   if (startListener(&listener_socket) != 0)
     exit(EXIT_FAILURE);
 
   /* Set nonblock for stdin. */
-   flag = fcntl(STDIN_FILENO, F_GETFL, 0);
+  flag = fcntl(STDIN_FILENO, F_GETFL, 0);
   flag |= O_NONBLOCK;
   fcntl(STDIN_FILENO, F_SETFL, flag);
 
   for (i = 0; i < MAX_CLIENTS; ++i) {
-      connections[i].socket = NO_SOCKET;
+    connections[i].socket = NO_SOCKET;
     createPeer(&connections[i]);
   }
 
   highestSocket = listener_socket;
 
   while (1) {
-      buildFDs(&read_fds, &write_fds, &except_fds);
+    buildFDs(&read_fds, &write_fds, &except_fds);
 
     highestSocket = listener_socket;
     for (i = 0; i < MAX_CLIENTS; ++i) {
@@ -432,56 +428,60 @@ int main(int argc, char **argv)
         highestSocket = connections[i].socket;
     }
 
-    activity = select(highestSocket + 1, &read_fds, &write_fds, &except_fds, NULL);
+    activity =
+        select(highestSocket + 1, &read_fds, &write_fds, &except_fds, NULL);
 
     switch (activity) {
-      case -1:
-          write(STDERR, strerror(errno), strlen(strerror(errno)) * sizeof(char));
-            shutdownServer(EXIT_FAILURE);
+    case -1:
+      write(STDERR, strerror(errno), strlen(strerror(errno)) * sizeof(char));
+      shutdownServer(EXIT_FAILURE);
 
-      case 0:
-        // you should never get here
-            shutdownServer(EXIT_FAILURE);
+    case 0:
+      // you should never get here
+      shutdownServer(EXIT_FAILURE);
 
-      default:
-        /* All set fds should be checked. */
-        if (FD_ISSET(STDIN_FILENO, &read_fds)) {
-          if (readin() != 0)
-              shutdownServer(EXIT_FAILURE);
-        }
+    default:
+      /* All set fds should be checked. */
+      if (FD_ISSET(STDIN_FILENO, &read_fds)) {
+        if (readin() != 0)
+          shutdownServer(EXIT_FAILURE);
+      }
 
-        if (FD_ISSET(listener_socket, &read_fds)) {
-          newConnection();
-        }
+      if (FD_ISSET(listener_socket, &read_fds)) {
+        newConnection();
+      }
 
-        if (FD_ISSET(STDIN_FILENO, &except_fds)) {
-            shutdownServer(EXIT_FAILURE);
-        }
+      if (FD_ISSET(STDIN_FILENO, &except_fds)) {
+        shutdownServer(EXIT_FAILURE);
+      }
 
-        if (FD_ISSET(listener_socket, &except_fds)) {
-            shutdownServer(EXIT_FAILURE);
-        }
+      if (FD_ISSET(listener_socket, &except_fds)) {
+        shutdownServer(EXIT_FAILURE);
+      }
 
-        for (i = 0; i < MAX_CLIENTS; ++i) {
-          if (connections[i].socket != NO_SOCKET && FD_ISSET(connections[i].socket, &read_fds)) {
-            if (receiveServerMsg(&connections[i], &handleReceived) != 0) {
-                closeClientConnection(&connections[i]);
-              continue;
-            }
-          }
-
-          if (connections[i].socket != NO_SOCKET && FD_ISSET(connections[i].socket, &write_fds)) {
-            if (sendPeerMsg(&connections[i]) != 0) {
-                closeClientConnection(&connections[i]);
-              continue;
-            }
-          }
-
-          if (connections[i].socket != NO_SOCKET && FD_ISSET(connections[i].socket, &except_fds)) {
-              closeClientConnection(&connections[i]);
+      for (i = 0; i < MAX_CLIENTS; ++i) {
+        if (connections[i].socket != NO_SOCKET &&
+            FD_ISSET(connections[i].socket, &read_fds)) {
+          if (receiveServerMsg(&connections[i], &handleReceived) != 0) {
+            closeClientConnection(&connections[i]);
             continue;
           }
         }
+
+        if (connections[i].socket != NO_SOCKET &&
+            FD_ISSET(connections[i].socket, &write_fds)) {
+          if (sendPeerMsg(&connections[i]) != 0) {
+            closeClientConnection(&connections[i]);
+            continue;
+          }
+        }
+
+        if (connections[i].socket != NO_SOCKET &&
+            FD_ISSET(connections[i].socket, &except_fds)) {
+          closeClientConnection(&connections[i]);
+          continue;
+        }
+      }
     }
   }
 
