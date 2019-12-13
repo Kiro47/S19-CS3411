@@ -9,6 +9,10 @@
 #define MAX_MSG_SIZE 128
 #endif
 
+/*
+ * Cruft from original attempt, was a simplistic idea, but did it fail hard.
+ */
+
 enum connectionType{
     ESTCONN, // Establish client connection to server
     SUCCONN, // Connection succesfully established

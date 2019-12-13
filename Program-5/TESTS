@@ -1,0 +1,25 @@
+Test 1:
+Number of clients: 1
+Number of Servers: 1
+Was able to send a message in server and client, and they appeared on each others screens
+
+Test 2:
+Number of clients: 3
+Number of Servers: 1
+Was able to send a message in server and clients, and they appeared on all others screens
+
+Test 3:
+Number of clients: 15
+Number of Servers: 1
+Was able to send a message in server and clients, and they appeared on all others screens
+
+Test 4:
+Client Test:
+Used invalid port or ip address:
+Results properly in the client shutting down
+
+Test 5:
+Client Test:
+Client receives "exit" for it's input
+Results properly in the client shutting down
+

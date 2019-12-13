@@ -1,350 +1,351 @@
-#include "cclient.h"
-#include "protocol.h"
+#include <errno.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <signal.h>
+#include <unistd.h>
+#include <sys/select.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "message.h"
 #include "utils.h"
 
-#include <arpa/inet.h>
-#include <signal.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <netdb.h>
-#include <errno.h>
-#include <netinet/in.h>
-#include <string.h>
-#include <stdlib.h>
-#include <poll.h>
-#include <stdio.h>
-#include <fcntl.h>
-#include <unistd.h>
+// Global server connection
+peer_t server;
 
-void printHelp()
+void shutdownClient(int exitCode);
+
+/*
+ * printPort(uint16_t listenerPort)
+ *      Prints out the passed in port to STDOUT
+ *
+ *  Args:
+ *      listenerPort: Port to print
+ */
+void printPort(uint16_t listenerPort)
 {
-    write(1, "Usage: cclient <remote> <port>\n", 32 );
+    char* stdioBuffer;
+    stdioBuffer = malloc(sizeof(listenerPort) + 21);
+    sprintf(stdioBuffer, "Listening Port: %d\n", ntohs(listenerPort));
+    write(STDOUT, stdioBuffer, strlen(stdioBuffer) * sizeof(char));
+    free(stdioBuffer);
 }
 
 /*
- * resolveConnection(char* hostname, char* port)
- *      Takes a hostname and port to establish a TCP connection on.
- *      Checks for and validates the hostname resolution and port first.
- *  args:
- *      hostname: The hostname to check for in IPV4 or DNS name
- *      port: The port to connect to (as a string)
- *
- *  Returns:
- *      Connection of the established stream, NULL if connection failed.
- *      This is allocated memory that needs to be freed if not NULL.
+ * handleSignal(int sigNumber)
+ *      Performs actions for the various signals given, handler binding.
+ *      This function as the potential to shutdown the program based on
+ *      the signal received.
+ *  Args:
+ *      signalNumber: Signal received
  */
-conn_t *resolveConnection(char* hostname, char* port)
+void handleSignal(int signalNumber)
+{
+    int fail;
+    fail = 0;
+    if (signalNumber == SIGINT) {
+        fail = 1;
+        write(STDOUT, "SIGINT Caught, Exiting.\n", 26 * sizeof(char));
+    }
+
+    // Room for more signals
+    if (fail == 1)
+    {
+        shutdownClient(0);
+    }
+}
+
+/*
+ * setupSignalHandlers()
+ *      Registers all required signal handlers for the program.
+ *  Returns:
+ *      -1: Error registering signal handler
+ *       0: Sucess registering all handlers
+ */
+int setupSignalHandlers()
+{
+  struct sigaction signalAction;
+    signalAction.sa_handler = handleSignal;
+  if (sigaction(SIGINT, &signalAction, 0) != 0) {
+      write(STDERR, strerror(errno), strlen(strerror(errno)) * sizeof(char));
+    return -1;
+  }
+
+  return 0;
+}
+
+/*
+ * getUsername(char **argv, char* username)
+ *      Gets username from CLI args
+ *  Args:
+ *      argv:       arguments passed into program from main
+ *      username:   variable to copy the string into
+ */
+void getUsername(char **argv, char *username)
+{
+    // Used to have more stuff
+    strcpy(username, argv[3]);
+}
+
+/*
+ * establishConnection(peer_t *server, char* ipAddr, char* port)
+ *      Resolves the connection and established a basic stream connection,
+ *      storing the data into server
+ *  Args:
+ *      server: peer_t to store data into
+ *      ipAddr: String of the IP/DNS name to attach to
+ *      port:   String of the port to connect to
+ *  Returns:
+ *      -1:  Error establishing connection
+ *       0:  Succesfully established connection
+ */
+int establishConnection(peer_t *server, char* ipAddr, char* port)
 {
     struct addrinfo hints;
     struct addrinfo *result;
     int status;
-    conn_t *serverConnection;
 
-    memset(&hints, 0, sizeof(hints));
-    memset(&result, 0, sizeof(result));
+    bzero(&hints, sizeof(hints));
+    bzero(&result, sizeof(result));
+
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_flags = AI_PASSIVE;
 
-    serverConnection = (conn_t*) malloc(sizeof(conn_t));
-
-    // Resolve information
-    status = getaddrinfo(hostname, port, &hints, &result);
+    status = getaddrinfo(ipAddr, port, &hints, &result);
     if (status != 0)
     {
         write(STDERR, gai_strerror(status),
-                strlen((gai_strerror(status))) * sizeof(char));
+              strlen((gai_strerror(status))) * sizeof(char));
         write(STDERR, "\n", sizeof(char));
-        free(serverConnection);
         free(result);
-        return NULL;
+        return -1;
     }
 
-    // Establish connection
-    serverConnection->sockfd = socket(result->ai_family, result->ai_socktype,
-            result->ai_protocol);
+  // Obtain socket
+  server->socket = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
+  // Error obtaining socket
+  if (server->socket < 0) {
+      write(STDERR, strerror(errno), strlen(strerror(errno)) * sizeof(char));
+      free(result);
+      return -1;
+  }
 
-    status = connect(serverConnection->sockfd, result->ai_addr,
-            result->ai_addrlen);
+  // initiate connection
+  if (connect(server->socket,result->ai_addr, result->ai_addrlen) != 0) {
+      write(STDERR, strerror(errno), strlen(strerror(errno)) * sizeof(char));
+      free(result);
+      return -1;
+  }
     free(result);
-    if (status != 0)
-    {
-        write(STDERR, strerror(errno), strlen(strerror(errno)) * sizeof(char));
-        write(STDERR, "\n", sizeof(char));
-        free(serverConnection);
-        return NULL;
-    }
-    // Return the connection
-    return serverConnection;
-}
-
-void disconnect(conn_t *connection)
-{
-
-}
-
-// TODO: redefine for struct
-int sendData(conn_t *connection, msgProto *msg)
-{
-    int returnValue;
-    char* testString = "This is a test string";
-    char* sendString;
-
-    returnValue = 0;
-    // Send data
-    returnValue = send(connection->sockfd, msg, sizeof(msgProto), 0);
-
-    if (returnValue >= 0)
-    {
-//        printf("%d\n", returnValue);
-        // send returnValue * (char) data
-        // or sent nothing
-        returnValue = 0;
-    }
-    sleep(3);
-//    printf("%d\n", returnValue);
-
-    return returnValue;
-}
-
-int receiveData(conn_t *connection)
-{
-    int returnValue;
-    msgProto *readBuffer;
-    readBuffer = malloc(sizeof(msgProto));
-    returnValue = recv(connection->sockfd, readBuffer, sizeof(msgProto), 0);
-
-    if (returnValue <= 0)
-    {
-        // Error in reading or broke pipe
-        return -1;
-    }
-    write(STDOUT, readBuffer->userName,
-            strlen(readBuffer->userName) * sizeof(char));
-    write(STDOUT, " ", sizeof(char));
-    write(STDOUT, readBuffer->msg,
-            strlen(readBuffer->userName) * sizeof(char));
-    write(STDOUT, "\n", sizeof(char));
-}
-
-int establishedConnection(conn_t *connection, int userPipe)
-{
-    // All
-    struct timeval timeout;
-    fd_set readfds;
-    int returnValue;
-    int readValue;
-
-    returnValue = 0;
-    msgProto *msg = malloc(sizeof(msgProto));
-
-    // Received
-    // Sending
-
-//    requestUsername();
-
-    while (1 == 1)
-    {
-        // Update every 1 ms
-        timeout.tv_sec = 0;
-        timeout.tv_usec = 1000;
-        FD_ZERO(&readfds);
-        FD_SET(connection->sockfd, &readfds);
-
-        if (select(connection->sockfd + 1, &readfds, NULL, NULL, &timeout)==-1)
-        {
-            // error
-            write(STDERR, strerror(errno), strlen(strerror(errno)) * sizeof(char));
-            break;
-        }
-
-        // Receive data, if it exists
-        if (FD_ISSET(connection->sockfd, &readfds))
-        {
-            //TODO finish this
-            receiveData(connection);
-        }
-
-        // Send data if any exists
-        // TODO: read struct
-        readValue = read(connection->sockfd, msg, sizeof(msgProto));
-        printf("Read: %d\n", readValue);
-        if (readValue != -1)
-        {
-            // TODO: actually send stuff right.
-            msg->connType = SERRECV;
-            strcpy(msg->userName, "testuser");
-            strcpy(msg->msg, "test message");
-            msg->channel = 0;
-            printf("help\n");
-            returnValue = sendData(connection, msg);
-            if (returnValue != 0)
-            {
-                break;
-            }
-        }
-    }
-    free(msg);
-    disconnect(connection);
-    return returnValue;
-}
-
-char* readInput()
-{
-    // Get user input
-    char* userInput;
-
-    userInput = malloc(sizeof(char) * MAX_MSG_SIZE);
-    userInput = input(userInput);
-
-    if (strlen(userInput) >= MAX_MSG_SIZE)
-    {
-        // We're just going to clip any messages over the max
-        userInput[MAX_MSG_SIZE - 1] = '\0';
-    }
-    return userInput;
-}
-
-char* getUsername()
-{
-    char* userInput;
-
-    write(STDOUT, "What would you like your username to be? ",
-            sizeof(char) * 42);
-
-    userInput = malloc(sizeof(char) * MAX_USERNAME_SIZE);
-    userInput = input(userInput);
-
-    if (strlen(userInput) >= MAX_USERNAME_SIZE)
-    {
-        userInput[MAX_USERNAME_SIZE] = '\0';
-    }
-    return userInput;
-}
-
-char* constructPrompt(char* username)
-{
-    char* prompt;
-    int i, j;
-
-    prompt = malloc(sizeof(char) * (MAX_USERNAME_SIZE + 4));
-    i =0;
-    prompt[i++] = '<';
-    for (j = 0; j < strlen(username); j++)
-    {
-        // Shouldn't ever happen, but prevention
-        if (username[j] == '\0')
-        {
-            break;
-        }
-        prompt[i++] = username[j];
-    }
-    prompt[i++] = '>';
-    prompt[i++] = ' ';
-    prompt[i] = '\0';
-    return prompt;
-}
-
-
-void launchUser(int writePipe)
-{
-    char* username;
-    char* prompt;
-    char* input;
-    msgProto *tempProto;
-
-    username = getUsername();
-    prompt = constructPrompt(username);
-
-    tempProto = malloc(sizeof(msgProto));
-    printf("%s\n", username);
-
-    while(1 == 1)
-    {
-        // Ask user for input
-        write(STDOUT, prompt, strlen(prompt) * sizeof(char));
-        // Keep looking for read input
-        input = readInput();
-        tempProto->connType = SERRECV;
-        strcpy(tempProto->userName, username);
-        strcpy(tempProto->msg, input);
-        tempProto->channel = 0;
-        printf("writing\n");
-        write(writePipe, tempProto, sizeof(msgProto));
-
-        bzero(tempProto, sizeof(msgProto));
-        free(input);
-    }
-    free(username);
-    free(prompt);
-    free(tempProto);
-}
-
-void genericHandler(int sig)
-{
-    return;
-}
-
-int main(int argc, char** argv)
-{
-    pid_t pid;
-    int pipes[2];
-
-    struct sigaction newTTYHandler;
-    struct sigaction oldTTYHandler;
-
-//    key_t key;
-//    int shmid;
-//    int mutex; // close enough for this
-
-//    key = ftok("test", 'R');
-//    shmid = shmget(key, sizeof(int), 0600 | IPC_CREATE);
-//    mutex = shmat(shmid, NULL, 0);
-
-    conn_t *connection;
-    printf("client\n");
-
-    if (argc != 3)
-    {
-        printHelp(argv[0]);
-        return 0;
-    }
-    // Resolve server
-    connection = resolveConnection(argv[1], argv[2]);
-    if (connection == NULL)
-    {
-        write(STDERR, "Error establishing connection.\n", 32);
-        return -1;
-    }
-
-    // Establish pipe
-    pipe2(pipes, O_NONBLOCK|O_CLOEXEC);
-    // Store and wipe TTY sighandler
-    memset(&newTTYHandler, 0, sizeof(struct sigaction));
-    sigemptyset(&newTTYHandler.sa_mask);
-//    newHandler.sa_handler = SIG_TTIN;
-    sigaction(SIGTTIN, &newTTYHandler, &oldTTYHandler);
-
-    // Begin processing
-    pid = fork();
-    if (pid == 0)
-    {
-        // Restore TTY input
-        sigaction(SIGTTIN, &oldTTYHandler, NULL);
-        // Close read on pipe
-        close(pipes[0]);
-        // Launch child reader
-        launchUser(pipes[1]);
-    }
-    else
-    {
-        close(STDIN);
-        // Close write on pipe
-        close(pipes[1]);
-        // Establish networking maintence
-        printf("tf");
-        establishedConnection(connection, pipes[0]);
-        free(connection);
-    }
     return 0;
+}
+
+/*
+ * buildFDs(peer_t *server, fd_set *readFds, fd_set *writeFDs,
+ *              fd_set *exceptFDs)
+ *      Builds file descriptor sets for usage with select()
+ *  Args:
+ *      server:     Server connection established
+ *      readFDs:    file descriptors to read with
+ *      writeFDs:   file descriptors to write with
+ *      exceptFDs:  file descriptors to deal with exceptions
+ */
+void buildFDs(peer_t *server, fd_set *readFds, fd_set *writeFDs,
+        fd_set *exceptFDs)
+{
+  FD_ZERO(readFds);
+  FD_SET(STDIN_FILENO, readFds);
+  FD_SET(server->socket, readFds);
+
+  FD_ZERO(writeFDs);
+  // Message to send in queue
+  if (server->send_buffer.current > 0) {
+      FD_SET(server->socket, writeFDs);
+  }
+
+  FD_ZERO(exceptFDs);
+  FD_SET(STDIN_FILENO, exceptFDs);
+  FD_SET(server->socket, exceptFDs);
+}
+
+/*
+ * readInput(peer_t *server, char *username)
+ *      reads input from STDIN and sends it to server
+ *      if input is equal to "exit" then the client shuts down.
+ *  Args:
+ *      server:     Server connection to send to
+ *      username: Username of client
+ *  Returns:
+ *      -1: Error reading from STDIN
+ *       0: Success
+ */
+int readInput(peer_t *server, char *username)
+{
+  char read_buffer[DATA_MAXSIZE];
+  message_t newMessage;
+
+  if (readSTDIN(read_buffer, DATA_MAXSIZE) != 0)
+    return -1;
+
+  if (strcmp(read_buffer, "exit") == 0)
+  {
+      shutdownClient(EXIT_SUCCESS);
+  }
+  // Create new message and enqueue it.
+  prepareMessage(username, read_buffer, &newMessage);
+
+  if (peerAdd(server, &newMessage) != 0) {
+    write(STDOUT, "Message Lost.\n", 16 * sizeof(char));
+    return 0;
+  }
+
+  return 0;
+}
+
+/*
+ * shutdownClient(int exitCode)
+ *      Shuts down the client safely
+ *  Args:
+ *      exitCode: Exit code to return with
+ */
+void shutdownClient(int exitCode)
+{
+  deletePeer(&server);
+  write(STDOUT, "Client shutdown.\n", 18 * sizeof(char));
+  exit(exitCode);
+}
+
+/*
+ * handleReceivedMessages(message_t *message)
+ *      Prints out the messages
+ *  Args:
+ *      message: Message to get print contents from
+ */
+int handleReceivedMessages(message_t *message)
+{
+    printMessage(message);
+    return 0;
+}
+
+/*
+ * maintainConnection(char* username)
+ *      Maintains the socket connect and performs the primary
+ *      looping to do the program stuff. Self exiting program loop.
+ *  Args:
+ *      username: Client's username
+ */
+void maintainConnection(char* username)
+{
+    int flag;
+    int maxfd;
+    fd_set readFDs;
+    fd_set writeFDs;
+    fd_set exceptFDs;
+
+    // Don't block STDIN
+    flag = fcntl(STDIN_FILENO, F_GETFL, 0);
+    flag |= O_NONBLOCK;
+    fcntl(STDIN_FILENO, F_SETFL, flag);
+
+    maxfd = server.socket;
+
+    while (0 == 0) {
+        // Reset FDs for next run
+        buildFDs(&server, &readFDs, &writeFDs, &exceptFDs);
+
+        int activity = select(maxfd + 1, &readFDs, &writeFDs, &exceptFDs, NULL);
+
+        if (activity == -1)
+        {
+            write(STDERR, strerror(errno), strlen(strerror(errno)) * sizeof(char));
+            shutdownClient(EXIT_FAILURE);
+        }
+        else if (activity == 0)
+        {
+            write(STDERR, strerror(errno), strlen(strerror(errno)) * sizeof(char));
+            shutdownClient(EXIT_FAILURE);
+        }
+
+
+                // Read STDIO input
+                if (FD_ISSET(STDIN_FILENO, &readFDs)) {
+                    if (readInput(&server, username) != 0) {
+                        shutdownClient(EXIT_FAILURE);
+                    }
+                }
+
+                // Exception called
+                if (FD_ISSET(STDIN_FILENO, &exceptFDs)) {
+                    write(STDERR, "Exception hit on STDIN\n", 25 * sizeof(char));
+                    shutdownClient(EXIT_FAILURE);
+                }
+
+                // Receive message
+                if (FD_ISSET(server.socket, &readFDs)) {
+                    if (receivePeerMsg(&server, &handleReceivedMessages) != 0)
+                        shutdownClient(EXIT_FAILURE);
+                }
+
+                // Message to send
+                if (FD_ISSET(server.socket, &writeFDs)) {
+                    if (sendPeerMsg(&server) != 0)
+                        shutdownClient(EXIT_FAILURE);
+                }
+
+                // Exception on server
+                if (FD_ISSET(server.socket, &exceptFDs)) {
+                    write(STDERR, "Exception hit on server\n", 26 * sizeof(char));
+                    shutdownClient(EXIT_FAILURE);
+                }
+    }
+}
+
+/*
+ * printHelp()
+ *      Print basic help menu
+ */
+void printHelp()
+{
+    write(STDOUT, "Usage: cclient <remote> <port> <username>\n", 42 );
+}
+
+/*
+ * main(int argc, char **argv)
+ *      main method of program
+ *  Args:
+ *      argc: Number of Args
+ *      argv: Arg array
+ *  Returns:
+ *      Program return code
+ */
+int main(int argc, char **argv)
+{
+    char username[MAX_USERNAME_SIZE];
+    char *buffer;
+    if (argc != 4)
+    {
+        printHelp();
+        exit(EXIT_SUCCESS);
+    }
+    // Setup Handlers
+  if (setupSignalHandlers() != 0)
+    exit(EXIT_FAILURE);
+
+  // Get name
+  getUsername(argv, username);
+
+  // Start
+  buffer = malloc(sizeof(char) * (strlen(username) + 30));
+  sprintf(buffer, "Starting client as user: [%s]\n", username);
+  write(STDOUT, buffer, sizeof(char) * (strlen(username) + 30));
+  free(buffer);
+  createPeer(&server);
+  if (establishConnection(&server, argv[1], argv[2]) != 0)
+    shutdownClient(EXIT_FAILURE);
+
+  maintainConnection(username);
 }
