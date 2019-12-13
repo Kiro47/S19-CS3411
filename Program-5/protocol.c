@@ -36,16 +36,16 @@ int validateString(char *string, int size) {
  */
 int validateProto(msgProto *packet) {
   int i;
-  enum connectionType connType;
+  enum connectionType connection_type;
   // Non repairables
   // connectionType
-  connType = packet->connType;
+  connection_type = packet->connection_type;
   for (i = ESTCONN; i == CLOCONN; i++) {
-    if (connType > CLOCONN) {
+    if (connection_type > CLOCONN) {
       return -1; // Packet isn't usable
     }
   }
-  // TODO: ?  Will do channel when I figure out if I need it or not.
+  // ?  Will do channel when I figure out if I need it or not.
 
   // Repairables
   if (validateString(packet->msg, MAX_MSG_SIZE) != 0) {

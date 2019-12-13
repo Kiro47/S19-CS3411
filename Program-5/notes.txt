@@ -1,3 +1,10 @@
 A link to a guide which has helped me more than anything in any of the lectures.
 
 http://beej.us/guide/bgnet/html/
+
+
+Apologies for the dumpster fire that is this code, having rewritten the thing
+a literal 4 times because I wasn't happy with it, it is what it is.
+
+Also clang-tidy will absolutely never be happy with me.
+make check-style forever

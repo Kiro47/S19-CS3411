@@ -18,6 +18,7 @@
 #include <sys/socket.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <unistd.h>
 
 // Per packet
 #define MAX_SEND_SIZE 100
@@ -115,7 +116,9 @@ void deleteQueue(message_queue_t *queue)
 int enqueue(message_queue_t *queue, message_t *message)
 {
     if (queue->current == queue->size)
+    {
         return -1;
+    }
 
     memcpy(&queue->data[queue->current], message, sizeof(message_t));
     queue->current++;
@@ -135,8 +138,9 @@ int enqueue(message_queue_t *queue, message_t *message)
  */
 int dequeue(message_queue_t *queue, message_t *message)
 {
-    if (queue->current == 0)
+    if (queue->current == 0){
         return -1;
+    }
 
     memcpy(message, &queue->data[queue->current - 1], sizeof(message_t));
     queue->current--;
@@ -261,7 +265,9 @@ int receivePeerMsg(peer_t *peer, int (*message_handler)(message_t *))
         // Count bytes to send.
         len_to_receive = sizeof(peer->receiving_buffer) - peer->current_receiving_byte;
         if (len_to_receive > MAX_SEND_SIZE)
+        {
             len_to_receive = MAX_SEND_SIZE;
+        }
 
         received_count = recv(peer->socket, (char *)&peer->receiving_buffer + peer->current_receiving_byte, len_to_receive, MSG_DONTWAIT);
         if (received_count < 0) {
@@ -317,7 +323,9 @@ int sendPeerMsg(peer_t *peer)
         // Count bytes to send.
         len_to_send = sizeof(peer->sending_buffer) - peer->current_sending_byte;
         if (len_to_send > MAX_SEND_SIZE)
+        {
             len_to_send = MAX_SEND_SIZE;
+        }
 
         send_count = send(peer->socket, (char *)&peer->sending_buffer + peer->current_sending_byte, len_to_send, 0);
         if (send_count < 0) {

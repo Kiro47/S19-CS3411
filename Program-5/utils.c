@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 /*
  * input()
@@ -13,7 +14,7 @@
  */
 char *input(char *string) {
   // char *string;
-  char curChar;
+  char current_character;
   int current_size;
 
   // string = malloc(sizeof(char) * DEFAULT_INPUT_LENGTH);
@@ -21,16 +22,16 @@ char *input(char *string) {
   if (string != NULL) {
     char c = 0;
     unsigned int i = 0;
-    while (read(STDIN, &curChar, sizeof(char)) != 0) {
+    while (read(STDIN, &current_character, sizeof(char)) != 0) {
       if (i == current_size) {
         current_size = current_size + sizeof(char);
         string = realloc(string, current_size);
       }
-      if (curChar == '\n') {
+      if (current_character == '\n') {
 
         break;
       }
-      string[i++] = curChar;
+      string[i++] = current_character;
     }
     string[i] = 0;
   } else {

@@ -14,7 +14,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-
 // Mostly to prevent overflow issues
 #define MAX_CLIENTS 256
 
@@ -344,8 +343,7 @@ int receiveServerMsg(peer_t *peer, int (*message_handler)(message_t *)) {
     // Count bytes to send.
     len_to_receive =
         sizeof(peer->receiving_buffer) - peer->current_receiving_byte;
-    if (len_to_receive > MAX_SEND_SIZE)
-    {
+    if (len_to_receive > MAX_SEND_SIZE) {
       len_to_receive = MAX_SEND_SIZE;
     }
 
@@ -429,8 +427,9 @@ int main(int argc, char **argv) {
 
     highestSocket = listener_socket;
     for (i = 0; i < MAX_CLIENTS; ++i) {
-      if (connections[i].socket > highestSocket)
+      if (connections[i].socket > highestSocket) {
         highestSocket = connections[i].socket;
+      }
     }
 
     activity =
@@ -448,8 +447,9 @@ int main(int argc, char **argv) {
     default:
       /* All set fds should be checked. */
       if (FD_ISSET(STDIN_FILENO, &read_fds)) {
-        if (readin() != 0)
+        if (readin() != 0) {
           shutdownServer(EXIT_FAILURE);
+        }
       }
 
       if (FD_ISSET(listener_socket, &read_fds)) {

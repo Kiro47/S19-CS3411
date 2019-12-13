@@ -24,7 +24,7 @@ enum connectionType{
 
 typedef struct
 {
-    enum connectionType connType;
+    enum connectionType connection_type;
     char userName[MAX_USERNAME_SIZE];
     char msg[MAX_MSG_SIZE];
     int channel; // might not be needed, designed for thread user
